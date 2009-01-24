@@ -14,7 +14,7 @@
   :author "Ole Arndt <ole@sugarshark.com>"
   :maintainer "Ole Arndt <ole@sugarshark.com>"
   :licence "LGPL"
-  :depends-on ()
+  :depends-on (:cffi)
   :in-order-to ((test-op (load-op :horde3d-test)))
   :perform (test-op :after (op c)
                     (funcall (intern (string '#:run!) '#:it.bese.FiveAM) :horde3d))
