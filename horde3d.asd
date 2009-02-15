@@ -18,13 +18,17 @@
   :in-order-to ((test-op (load-op :horde3d-test)))
   :perform (test-op :after (op c)
                     (funcall (intern (string '#:run!) '#:it.bese.FiveAM) :horde3d))
-  :components ((:doc-file "README")
-               (:static-file "horde3d.asd")
-               (:module "src"
-                        :components ((:file "packages")
-                                     (:file "libraries" :depends-on ("packages"))
-                                     (:file "bindings" :depends-on ("libraries"))
-                                     (:file "horde3d" :depends-on ("bindings"))))))
+  :components
+  ((:doc-file "README")
+   (:static-file "horde3d.asd")
+   (:module "src"
+            :components
+            ((:file "bindings-package")
+             (:file "libraries" :depends-on ("bindings-package"))
+             (:file "bindings" :depends-on ("libraries"))
+             ;; lispification
+             (:file "packages" :depends-on ("bindings-package"))
+             (:file "horde3d" :depends-on ("packages"))))))
 
 (defsystem :horde3d-test
   :components ((:module "test"

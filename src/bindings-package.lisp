@@ -1,19 +1,14 @@
-;;; packages.lisp --- package definition and exported symbols
-;;;                   _                         
-;;;  _ __   __ _  ___| | ____ _  __ _  ___  ___ 
-;;; | '_ \ / _` |/ __| |/ / _` |/ _` |/ _ \/ __|
-;;; | |_) | (_| | (__|   < (_| | (_| |  __/\__ \
-;;; | .__/ \__,_|\___|_|\_\__,_|\__, |\___||___/
-;;; |_|                         |___/           
+;;; bindings-package.lisp --- package definition and exported symbols
 ;;;
 ;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
 ;;; 
 
 (in-package :cl-user)
 
-(defpackage #:horde3d
-  (:nicknames #:h3d)
+(defpackage #:horde3d-cffi-binding
+  (:nicknames #:%h3d)
   (:use #:common-lisp #:cffi)
+  (:shadow #:float #:boolean #:string)
   (:export #:+root-node+
            #:get-version-string
            #:check-extension
@@ -103,11 +98,7 @@
            #:show-text
            #:show-frame-stats
            #:add-terrain-node
-           #:create-geometry-resource
-
-           ;; lispification
-           #:set-resource-paths
-           #:set-options))
+           #:create-geometry-resource))
 
 
-;;; packages.lisp ends here
+;;; binding-package.lisp ends here

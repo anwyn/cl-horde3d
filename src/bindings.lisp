@@ -9,24 +9,78 @@
 ;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
 ;;;
 
-(in-package :horde3d)
+(in-package :horde3d-cffi-binding)
+
+;;;; CFFI types
+
+(define-foreign-type ensure-integer ()
+  ()
+  (:actual-type :int)
+  (:simple-parser ensure-integer))
+
+(defmethod translate-to-foreign (value (type ensure-integer))
+  (truncate value))
+
+(defmethod expand-to-foreign (value (type ensure-integer))
+  (if (constantp value)
+      (truncate (eval value))
+      `(truncate ,value)))
+
+(define-foreign-type ensure-float ()
+  ()
+  (:actual-type :float)
+  (:simple-parser ensure-float))
+
+(defmethod translate-to-foreign (value (type ensure-float))
+  (cl:float value 1.0))
+
+(defmethod expand-to-foreign (value (type ensure-float))
+  (if (constantp value)
+      (cl:float (eval value) 1.0)
+      `(cl:float ,value 1.0)))
+
+(define-foreign-type ensure-double ()
+  ()
+  (:actual-type :double)
+  (:simple-parser ensure-double))
+
+(defmethod translate-to-foreign (value (type ensure-double))
+  (cl:float value 1.0d0))
+
+(defmethod expand-to-foreign (value (type ensure-double))
+  (if (constantp value)
+      (cl:float (eval value) 1.0d0)
+      `(cl:float ,value 1.0d0)))
+
+;;;; C types
+
+(defctype boolean (:boolean :unsigned-char))
+
+(defctype int ensure-integer)
+(defctype sizei ensure-integer)
+
+(defctype void :void)
+(defctype string :string)
+
+(defctype float ensure-float)
+(defctype double ensure-double)
 
 ;;;; Group: Typedefs and constants
 
-(defctype resource-handle :int
+(defctype resource-handle ensure-integer
   "Handle to a resource (int).")
 
-(defctype node-handle :int
+(defctype node-handle ensure-integer
   "Handle to a scene node (int).")
 
 ;;;; Constants: Predefined constants
 
-(defconstant +root-node+ 
+(defconstant +root-node+ 1
   "Scene root node handle.")
 
 ;;;; Group: Enumerations
 
-(defcenum engine-options
+(defcenum engine-option
   "The available engine option parameters.
 
  :max-log-level       - Defines the maximum log level; only messages which are smaller or equal to this value
@@ -450,7 +504,7 @@ The available Terrain node parameters:
 
 ;;;; Group: Basic functions
 
-(defh3fun ("getVersionString" get-version-string) :string
+(defh3fun ("getVersionString" get-version-string) string
   "Returns the engine version string.
 
 This function returns a pointer to a string containing the current version of
@@ -463,7 +517,7 @@ Returns:
       pointer to the version string
 ")
 
-(defh3fun ("checkExtension" check-extension) :boolean
+(defh3fun ("checkExtension" check-extension) boolean
   "Checks if an extension is part of the engine library.
 
 This function checks if a specified extension is contained in the DLL/shared
@@ -475,152 +529,149 @@ Parameters:
 Returns:
     true if extension is implemented, otherwise false
 "
-  (extension-name :string))
+  (extension-name string))
 
 ;; bool init();
-(defh3fun ("init" init) :void
+(defh3fun ("init" init) void
   "Initializes the engine.
 
-This function initializes the graphics engine and makes it ready for use. It has
-to be the first call to the engine except for getVersionString. In order to
-successfully initialize the engine the calling application must provide a valid
-OpenGL context. The function can be called several times on different rendering
-contexts in order to initialize them.
+  This function initializes the graphics engine and makes it ready for use. It has
+  to be the first call to the engine except for getVersionString. In order to
+  successfully initialize the engine the calling application must provide a valid
+  OpenGL context. The function can be called several times on different rendering
+  contexts in order to initialize them.
 
-Parameters:
-        none
+  Parameters:
+          none
 
-Returns:
-        true in case of success, otherwise false
+  Returns:
+          true in case of success, otherwise false
 ")
 
 ;; void release();
-(defh3fun ("release" release) :void
+(defh3fun ("release" release) void
   "Releases the engine.
 
-This function releases the engine and frees all objects and associated
-memory. It should be called when the application is destroyed.
+ This function releases the engine and frees all objects and associated
+ memory. It should be called when the application is destroyed.
 
-Parameters:
-        none
+ Parameters:
+         none
 
-Returns:
-        nothing
+ Returns:
+         nothing
 ")
 
 
 ;; void resize( int x, int y, int width, int height );
-(defh3fun ("resize" resize) :void
+(defh3fun ("resize" resize) void
   "Resizes the viewport.
 
-This function sets the dimensions of the rendering viewport. It has to be called
-after initialization and whenever the viewport size changes.
+  This function sets the dimensions of the rendering viewport. It has to be called
+  after initialization and whenever the viewport size changes.
 
-Parameters:
-        x               - the x-position of the viewport in the rendering context
-        y               - the y-position of the viewport in the rendering context
-        width   - the width of the viewport
-        height  - the height of the viewport
+  Parameters:
+          x               - the x-position of the viewport in the rendering context
+          y               - the y-position of the viewport in the rendering context
+          width   - the width of the viewport
+          height  - the height of the viewport
 
-Returns:
-        nothing
+  Returns:
+          nothing
 "
-  (x :int)
-  (y :int)
-  (width :int)
-  (heigth :int))
+  (x int) (y int) (width int) (heigth int))
 
 
 
 ;; bool render( NodeHandle cameraNode );
-(defh3fun ("render" render) :boolean
+(defh3fun ("render" render) boolean
   "Main rendering function.
 
-This is the main function of the engine. It executes all the rendering,
-animation and other tasks. The function can be called several times per frame,
-for example in order to write to different output buffers.
+  This is the main function of the engine. It executes all the rendering,
+  animation and other tasks. The function can be called several times per frame,
+  for example in order to write to different output buffers.
 
-Parameters:
-        cameraNode      - camera node used for rendering scene
+  Parameters:
+          cameraNode      - camera node used for rendering scene
 
-Returns:
-        true in case of success, otherwise false
+  Returns:
+          true in case of success, otherwise false
 "
   (camera-node node-handle))
 
 
 ;; void clear();
-(defh3fun ("clear" clear) :void
+(defh3fun ("clear" clear) void
   "Removes all resources and scene nodes.
 
-This function removes all nodes from the scene graph except the root node and
-releases all resources.
+  This function removes all nodes from the scene graph except the root node and
+  releases all resources.
 
-Warning: All resource and node IDs are invalid after calling this function*
+  Warning: All resource and node IDs are invalid after calling this function
 
-Parameters:
-        none
+  Parameters:
+          none
 
-Returns:
-        nothing
+  Returns:
+          nothing
 ")
 
 
 
 ;; const char *getMessage( int *level, float *time );
-(defh3fun ("getMessage" get-message) :string
+(defh3fun ("getMessage" get-message) string
   "Gets the next message from the message queue.
 
-This function returns the next message string from the message queue and writes
-additional information o the specified variables. If no message is left over in
-the queue an empty string is returned.
+  This function returns the next message string from the message queue and writes
+  additional information o the specified variables. If no message is left over in
+  the queue an empty string is returned.
 
-Parameters:
-        level   - pointer to variable for storing message level indicating importance (can be NULL)
-        time    - pointer to variable for storing time when message was added (can be NULL)
+  Parameters:
+          level   - pointer to variable for storing message level indicating importance (can be NULL)
+          time    - pointer to variable for storing time when message was added (can be NULL)
 
-Returns:
-        message string or empty string if no message is in queue
+  Returns:
+          message string or empty string if no message is in queue
 "
-  (level (:pointer :int))
-  (time (:pointer :float)))
+  (level (:pointer int))
+  (time (:pointer float)))
 
 
 ;; float getOption( EngineOptions::List param );
-(defh3fun ("getOption" get-option) :float
+(defh3fun ("getOption" get-option) float
   "Gets an option parameter of the engine.
 
-This function gets a specified option parameter and returns its value.
+  This function gets a specified option parameter and returns its value.
 
-Parameters:
-        param   - option parameter
+  Parameters:
+          param   - option parameter
 
-Returns:
-        current value of the specified option parameter
+  Returns:
+          current value of the specified option parameter
 "
-  (param engine-options))
+  (param engine-option))
 
 
 ;; bool setOption( EngineOptions::List param, float value );
-(defh3fun ("setOption" set-option) :boolean
+(defh3fun ("setOption" set-option) boolean
   "Sets an option parameter for the engine.
 
-This function sets a specified option parameter to a specified value.
+  This function sets a specified option parameter to a specified value.
 
-Parameters:
-        param   - option parameter
-        value   - value of the option parameter
+  Parameters:
+          param   - option parameter
+          value   - value of the option parameter
 
-Returns:
-        true if the option could be set to the specified value, otherwise false
+  Returns:
+          true if the option could be set to the specified value, otherwise false
 "
-  (param engine-options)
-  (value :float))
+  (param engine-option)
+  (value float))
 
 
 
 ;; float getStat( EngineStats::List param, bool reset );
-(defh3fun ("getStat" get-stat) :float
+(defh3fun ("getStat" get-stat) float
   "Gets a statistic value of the engine.
 
 This function returns the value of the specified statistic. The reset flag makes
@@ -634,7 +685,7 @@ Returns:
         current value of the specified statistic parameter
 "
   (param engine-stats)
-  (reset :boolean))
+  (reset boolean))
 
 
 ;; void showOverlay( float x_ll, float y_ll, float u_ll, float v_ll,
@@ -642,7 +693,7 @@ Returns:
 ;;                                                float x_ur, float y_ur, float u_ur, float v_ur,
 ;;                                                float x_ul, float y_ul, float u_ul, float v_ul,
 ;;                                                int layer, ResHandle materialRes );
-(defh3fun ("showOverlay" show-overlay) :void
+(defh3fun ("showOverlay" show-overlay) void
   "Shows an overlay on the screen.
 
 This function displays an overlay with a specified material at a specified
@@ -666,17 +717,17 @@ Parameters:
 Returns:
         nothing
 "
-  (x-ll :float) (y-ll :float) (u-ll :float)
-  (v-ll :float) (x-lr :float) (y-lr :float)
-  (u-lr :float) (v-lr :float) (x-ur :float)
-  (y-ur :float) (u-ur :float) (v-ur :float)
-  (x-ul :float) (y-ul :float) (u-ul :float)
-  (v-ul :float) (layer :int)
+  (x-ll float) (y-ll float) (u-ll float)
+  (v-ll float) (x-lr float) (y-lr float)
+  (u-lr float) (v-lr float) (x-ur float)
+  (y-ur float) (u-ur float) (v-ur float)
+  (x-ul float) (y-ul float) (u-ul float)
+  (v-ul float) (layer int)
   (material-res resource-handle))
 
 
 ;; void clearOverlays();
-(defh3fun ("clearOverlays" clear-overlays) :void
+(defh3fun ("clearOverlays" clear-overlays) void
   "Removes all overlays.
 
 This function removes all overlays that were added using showOverlay.
@@ -693,7 +744,7 @@ Returns:
 
 
 ;; int getResourceType( ResHandle res );
-(defh3fun ("getResourceType" get-resource-type) :int
+(defh3fun ("getResourceType" get-resource-type) int
   "Returns the type of a resource.
 
 This function returns the type of a specified resource. If the resource handle
@@ -709,7 +760,7 @@ Returns:
 
 
 ;; const char *getResourceName( ResHandle res );
-(defh3fun ("getResourceName" get-resource-name) :string
+(defh3fun ("getResourceName" get-resource-name) string
   "Returns the name of a resource.
 
 This function returns a pointer to the name of a specified resource. If the
@@ -743,7 +794,7 @@ Returns:
         handle to the resource or 0 if not found
 "
   (type resource-type)
-  (name :string))
+  (name string))
 
 
 ;; ResHandle addResource( int type, const char *name, int flags );
@@ -766,7 +817,7 @@ Returns:
         handle to the resource to be added or 0 in case of failure
 "
   (type resource-type)
-  (name :string)
+  (name string)
   (flags resource-flags))
 
 
@@ -790,11 +841,11 @@ Returns:
         handle to the cloned resource or 0 in case of failure
 "
   (source-res resource-handle)
-  (name :string))
+  (name string))
 
 
 ;; int removeResource( ResHandle res );
-(defh3fun ("removeResource" remove-resource) :int
+(defh3fun ("removeResource" remove-resource) int
   "Removes a resource.
 
 This function decreases the user reference count of a specified resource. When
@@ -812,7 +863,7 @@ Returns:
 
 
 ;; bool isResourceLoaded( ResHandle res );
-(defh3fun ("isResourceLoaded" is-resource-loaded) :boolean
+(defh3fun ("isResourceLoaded" is-resource-loaded) boolean
   "Checks if a resource is loaded.
 
 This function checks if the specified resource has been successfully loaded.
@@ -827,7 +878,7 @@ Returns:
 
 
 ;; bool loadResource( ResHandle res, const char *data, int size );
-(defh3fun ("loadResource" load-resource) :boolean
+(defh3fun ("loadResource" load-resource) boolean
   "Loads a resource.
 
 This function loads data for a resource that was previously added to the
@@ -849,11 +900,11 @@ Returns:
 "
   (res resource-handle)
   (data :pointer)
-  (size :int))
+  (size int))
 
 
 ;; bool unloadResource( ResHandle res );
-(defh3fun ("unloadResource" unload-resource) :boolean
+(defh3fun ("unloadResource" unload-resource) boolean
   "Unloads a resource.
 
 This function unloads a previously loaded resource and restores the default
@@ -871,7 +922,7 @@ Returns:
 
 
 ;; int getResourceParami( ResHandle res, int param );
-(defh3fun ("getResourceParami" get-resource-parami) :int
+(defh3fun ("getResourceParami" get-resource-parami) int
   "Gets a property of a resource.
 
 This function returns a specified property of the specified resource.  The
@@ -888,7 +939,7 @@ Returns:
 
 
 ;; bool setResourceParami( ResHandle res, int param, int value );
-(defh3fun ("setResourceParami" set-resource-parami) :boolean
+(defh3fun ("setResourceParami" set-resource-parami) boolean
   "Sets a property of a resource.
 
 This function sets a specified property of the specified resource to a specified
@@ -902,11 +953,11 @@ Parameters:
 Returns:
          true in case of success otherwise false
 "
-  (res resource-handle) (param resource-parameter) (value :int))
+  (res resource-handle) (param resource-parameter) (value int))
 
 
 ;; float getResourceParamf( ResHandle res, int param );
-(defh3fun ("getResourceParamf" get-resource-paramf) :float
+(defh3fun ("getResourceParamf" get-resource-paramf) float
   "Gets a property of a resource.
 
 This function returns a specified property of the specified resource.  The
@@ -924,7 +975,7 @@ Returns:
 
 
 ;; bool setResourceParamf( ResHandle res, int param, float value );
-(defh3fun ("setResourceParamf" set-resource-paramf) :boolean
+(defh3fun ("setResourceParamf" set-resource-paramf) boolean
   "Sets a property of a resource.
 
 This function sets a specified property of the specified resource to a specified
@@ -938,11 +989,11 @@ Parameters:
 Returns:
          true in case of success otherwise false
 "
-  (res resource-handle) (param resource-parameter) (value :float))
+  (res resource-handle) (param resource-parameter) (value float))
 
 
 ;; const char *getResourceParamstr( ResHandle res, int param );
-(defh3fun ("getResourceParamstr" get-resource-paramstr) :string
+(defh3fun ("getResourceParamstr" get-resource-paramstr) string
   "Gets a property of a resource.
 
 This function returns a specified property of the specified resource.  The
@@ -962,7 +1013,7 @@ Returns:
 
 
 ;; bool setResourceParamstr( ResHandle res, int param, const char *value );
-(defh3fun ("setResourceParamstr" set-resource-paramstr) :boolean
+(defh3fun ("setResourceParamstr" set-resource-paramstr) boolean
   "Sets a property of a resource.
 
 This function sets a specified property of the specified resource to a specified
@@ -976,11 +1027,11 @@ Parameters:
 Returns:
          true in case of success otherwise false
 "
-  (res resource-handle) (param resource-parameter) (value :string))
+  (res resource-handle) (param resource-parameter) (value string))
 
 
 ;; const void *getResourceData( ResHandle res, int param );
-(defh3fun ("getResourceData" get-resource-data) :string
+(defh3fun ("getResourceData" get-resource-data) string
   "Gives access to resource data.
 
 This function returns a pointer to the specified data of a specified
@@ -1001,7 +1052,7 @@ Returns:
 
 
 ;; bool updateResourceData( ResHandle res, int param, const void *data, int size );
-(defh3fun ("updateResourceData" update-resource-data) :boolean
+(defh3fun ("updateResourceData" update-resource-data) boolean
   "Updates the data of a resource.
 
  This function updates the content of a resource that was successfully loaded
@@ -1027,7 +1078,7 @@ Returns:
   Returns:
           true in case of success, otherwise false
 "
-  (res resource-handle) (param resource-parameter) (data :pointer) (size :int))
+  (res resource-handle) (param resource-parameter) (data :pointer) (size int))
 
 
 ;; ResHandle queryUnloadedResource( int index );
@@ -1044,11 +1095,11 @@ Parameters:
 Returns:
         handle to an unloaded resource or 0
 "
-  (index :int))
+  (index int))
 
 
 ;; void releaseUnusedResources();
-(defh3fun ("releaseUnusedResources" release-unused-resources) :void
+(defh3fun ("releaseUnusedResources" release-unused-resources) void
   "Frees resources that are no longer used.
 
 This function releases resources that are no longer used. Unused resources were
@@ -1087,15 +1138,15 @@ Parameters:
 Returns:
         handle to the created resource or 0 in case of failure
 "
-  (name :string)
+  (name string)
   (flags resource-flags)
-  (width :int)
-  (height :int)
-  (renderable :boolean))
+  (width int)
+  (height int)
+  (renderable boolean))
 
 
 ;; void setShaderPreambles( const char *vertPreamble, const char *fragPreamble );
-(defh3fun ("setShaderPreambles" set-shader-preambles) :void
+(defh3fun ("setShaderPreambles" set-shader-preambles) void
   "Sets preambles of all Shader resources.
 
 This function defines a header that is inserted at the beginning of all
@@ -1111,12 +1162,12 @@ Parameters:
 Returns:
         nothing
 "
-  (vert-preamble :string)
-  (frag-preamble :string))
+  (vert-preamble string)
+  (frag-preamble string))
 
 
 ;; bool setMaterialUniform( ResHandle materialRes, const char *name, float a, float b, float c, float d );
-(defh3fun ("setMaterialUniform" set-material-uniform) :boolean
+(defh3fun ("setMaterialUniform" set-material-uniform) boolean
   "Sets a shader uniform of a Material resource.
 
 This function sets the specified shader uniform of the specified material to the
@@ -1130,11 +1181,11 @@ Parameters:
 Returns:
         true in case of success, otherwise false
 "
-  (material-res resource-handle) (name :string) (a :float) (b :float) (c :float) (d :float))
+  (material-res resource-handle) (name string) (a float) (b float) (c float) (d float))
 
 
 ;; bool setPipelineStageActivation( ResHandle pipelineRes, const char *stageName, bool enabled );
-(defh3fun ("setPipelineStageActivation" set-pipeline-stage-activation) :boolean
+(defh3fun ("setPipelineStageActivation" set-pipeline-stage-activation) boolean
   "Sets the activation state of a pipeline stage.
 
 This function enables or disables a specified stage of the specified pipeline
@@ -1149,14 +1200,14 @@ Returns:
         true in case of success, otherwise false
 "
   (pipeline-res resource-handle)
-  (stage-name :string)
-  (enabled :boolean))
+  (stage-name string)
+  (enabled boolean))
 
 
 ;; bool getPipelineRenderTargetData( ResHandle pipelineRes, const char *targetName,
 ;;                                            int bufIndex, int *width, int *height, int *compCount,
 ;;                                                                                float *dataBuffer, int bufferSize );
-(defh3fun ("getPipelineRenderTargetData" get-pipeline-render-target-data) :boolean
+(defh3fun ("getPipelineRenderTargetData" get-pipeline-render-target-data) boolean
   "Reads the pixel data of a pipeline render target buffer.
 
 This function reads the pixels of the specified buffer of the specified render
@@ -1182,13 +1233,13 @@ Returns:
         true in case of success, otherwise false
 "
   (pipeline-res resource-handle)
-  (target-name :string)
-  (buf-index :int)
-  (width (:pointer :int))
-  (height (:pointer :int))
-  (comp-count (:pointer :int))
-  (data-buffer (:pointer :float))
-  (buffer-size :int))
+  (target-name string)
+  (buf-index int)
+  (width (:pointer int))
+  (height (:pointer int))
+  (comp-count (:pointer int))
+  (data-buffer (:pointer float))
+  (buffer-size int))
 
 
 ;;;; Group: General scene graph functions
@@ -1227,7 +1278,7 @@ Returns:
 
 
 ;; bool setNodeParent( NodeHandle node, NodeHandle parent );
-(defh3fun ("setNodeParent" set-node-parent) :boolean
+(defh3fun ("setNodeParent" set-node-parent) boolean
   "Relocates a node in the scene graph.
 
 This function relocates a scene node. It detaches the node from its current
@@ -1259,7 +1310,7 @@ Parameters:
 Returns:
         handle to the child node or 0 if child doesn't exist
 "
-  (node node-handle) (index :int))
+  (node node-handle) (index int))
 
 
 ;; NodeHandle addNodes( NodeHandle parent, ResHandle sceneGraphRes );
@@ -1281,7 +1332,7 @@ Returns:
 
 
 ;; bool removeNode( NodeHandle node );
-(defh3fun ("removeNode" remove-node) :boolean
+(defh3fun ("removeNode" remove-node) boolean
   "Removes a node from the scene.
 
 This function removes the specified node and all of it's children from the
@@ -1297,7 +1348,7 @@ Returns:
 
 
 ;; bool setNodeActivation( NodeHandle node, bool active );
-(defh3fun ("setNodeActivation" set-node-activation) :boolean
+(defh3fun ("setNodeActivation" set-node-activation) boolean
   "Sets the activation (visibility) state of a node.
 
 This function sets the activation state of the specified node to active or
@@ -1310,11 +1361,11 @@ Parameters:
 Returns:
         true in case of success otherwise false
 "
-  (node node-handle) (active :boolean))
+  (node node-handle) (active boolean))
 
 
 ;; bool checkNodeTransformFlag( NodeHandle node, bool reset );
-(defh3fun ("checkNodeTransformFlag" check-node-transform-flag) :boolean
+(defh3fun ("checkNodeTransformFlag" check-node-transform-flag) boolean
   "Checks if a scene node has been transformed by the engine.
 
 This function checks if a scene node has been transformed by the engine since
@@ -1331,11 +1382,11 @@ Parameters:
 Returns:
         true if node has been transformed, otherwise false
 "
-  (node node-handle) (reset :boolean))
+  (node node-handle) (reset boolean))
 
 
 ;; bool getNodeTransform( NodeHandle node, float *tx, float *ty, float *tz, float *rx, float *ry, float *rz, float *sx, float *sy, float *sz );
-(defh3fun ("getNodeTransform" get-node-transform) :boolean
+(defh3fun ("getNodeTransform" get-node-transform) boolean
   "Gets the relative transformation of a node.
 
 This function gets the translation, rotation and scale of a specified scene node
@@ -1353,13 +1404,13 @@ Returns:
         true in case of success otherwise false
 "
   (node node-handle)
-  (tx (:pointer :float)) (ty (:pointer :float)) (tz (:pointer :float))
-  (rx (:pointer :float)) (ry (:pointer :float)) (rz (:pointer :float))
-  (sx (:pointer :float)) (sy (:pointer :float)) (sz (:pointer :float)))
+  (tx (:pointer float)) (ty (:pointer float)) (tz (:pointer float))
+  (rx (:pointer float)) (ry (:pointer float)) (rz (:pointer float))
+  (sx (:pointer float)) (sy (:pointer float)) (sz (:pointer float)))
 
 
 ;; bool setNodeTransform( NodeHandle node, float tx, float ty, float tz, float rx, float ry, float rz, float sx, float sy, float sz );
-(defh3fun ("setNodeTransform" set-node-transform) :boolean
+(defh3fun ("setNodeTransform" set-node-transform) boolean
   "Sets the relative transformation of a node.
 
 This function sets the relative translation, rotation and scale of a specified
@@ -1376,13 +1427,13 @@ Returns:
         true in case of success otherwise false
 "
   (node node-handle)
-  (tx :float) (ty :float) (tz :float)
-  (rx :float) (ry :float) (rz :float)
-  (sx :float) (sy :float) (sz :float))
+  (tx float) (ty float) (tz float)
+  (rx float) (ry float) (rz float)
+  (sx float) (sy float) (sz float))
 
 
 ;; bool getNodeTransformMatrices( NodeHandle node, const float **relMat, const float **absMat );
-(defh3fun ("getNodeTransformMatrices" get-node-transform-matrices) :boolean
+(defh3fun ("getNodeTransformMatrices" get-node-transform-matrices) boolean
   "Returns the transformation matrices of a node.
 
 This function stores a pointer to the relative and absolute transformation
@@ -1400,12 +1451,12 @@ Returns:
         true in case of success otherwise false
 "
   (node node-handle)
-  (rel-mat (:pointer :float))
-  (abs-mat (:pointer :float)))
+  (rel-mat (:pointer float))
+  (abs-mat (:pointer float)))
 
 
 ;; bool setNodeTransformMatrix( NodeHandle node, const float *mat4x4 );
-(defh3fun ("setNodeTransformMatrix" set-node-transform-matrix) :boolean
+(defh3fun ("setNodeTransformMatrix" set-node-transform-matrix) boolean
   "Sets the relative transformation matrix of a node.
 
 This function sets the relative transformation matrix of the specified scene
@@ -1424,7 +1475,7 @@ Returns:
 
 
 ;; float getNodeParamf( NodeHandle node, int param );
-(defh3fun ("getNodeParamf" get-node-paramf) :float
+(defh3fun ("getNodeParamf" get-node-paramf) float
   "Gets a property of a scene node.
 
 This function returns a specified property of the specified node.  The property
@@ -1441,7 +1492,7 @@ Returns:
 
 
 ;; bool setNodeParamf( NodeHandle node, int param, float value );
-(defh3fun ("setNodeParamf" set-node-paramf) :boolean
+(defh3fun ("setNodeParamf" set-node-paramf) boolean
   "Sets a property of a scene node.
 
 This function sets a specified property of the specified node to a specified
@@ -1455,11 +1506,11 @@ Parameters:
 Returns:
          true in case of success otherwise false
 "
-  (node node-handle) (param node-parameter) (value :float))
+  (node node-handle) (param node-parameter) (value float))
 
 
 ;; int getNodeParami( NodeHandle node, int param );
-(defh3fun ("getNodeParami" get-node-parami) :int
+(defh3fun ("getNodeParami" get-node-parami) int
   "Gets a property of a scene node.
 
 This function returns a specified property of the specified node.  The property
@@ -1476,7 +1527,7 @@ Returns:
 
 
 ;; bool setNodeParami( NodeHandle node, int param, int value );
-(defh3fun ("setNodeParami" set-node-parami) :boolean
+(defh3fun ("setNodeParami" set-node-parami) boolean
   "Sets a property of a scene node.
 
 This function sets a specified property of the specified node to a specified
@@ -1490,11 +1541,11 @@ Parameters:
 Returns:
          true in case of success otherwise false
 "
-  (node node-handle) (param node-parameter) (value :int))
+  (node node-handle) (param node-parameter) (value int))
 
 
 ;; const char *getNodeParamstr( NodeHandle node, int param );
-(defh3fun ("getNodeParamstr" get-node-paramstr) :string
+(defh3fun ("getNodeParamstr" get-node-paramstr) string
   "Gets a property of a scene node.
 
 This function returns a specified property of the specified node.  The property
@@ -1514,7 +1565,7 @@ Returns:
 
 
 ;; bool setNodeParamstr( NodeHandle node, int param, const char *value );
-(defh3fun ("setNodeParamstr" set-node-paramstr) :boolean
+(defh3fun ("setNodeParamstr" set-node-paramstr) boolean
   "Sets a property of a scene node.
 
 This function sets a specified property of the specified node to a specified
@@ -1528,12 +1579,12 @@ Parameters:
 Returns:
          true in case of success otherwise false
 "
-  (node node-handle) (param node-parameter) (value :string))
+  (node node-handle) (param node-parameter) (value string))
 
 
 
 ;; bool getNodeAABB( NodeHandle node, float *minX, float *minY, float *minZ, float *maxX, float *maxY, float *maxZ );
-(defh3fun ("getNodeAABB" get-node-aabb) :boolean
+(defh3fun ("getNodeAABB" get-node-aabb) boolean
   "Gets the bounding box of a scene node.
 
 This function stores the world coordinates of the axis aligned bounding box of a
@@ -1549,12 +1600,12 @@ Returns:
         true in case of success otherwise false
 "
   (node node-handle)
-  (min-x (:pointer :float)) (min-y (:pointer :float)) (min-z (:pointer :float))
-  (max-x (:pointer :float)) (max-y (:pointer :float)) (max-z (:pointer :float)))
+  (min-x (:pointer float)) (min-y (:pointer float)) (min-z (:pointer float))
+  (max-x (:pointer float)) (max-y (:pointer float)) (max-z (:pointer float)))
 
 
 ;; int findNodes( NodeHandle startNode, const char *name, int type );
-(defh3fun ("findNodes" find-nodes) :int
+(defh3fun ("findNodes" find-nodes) int
   "Finds scene nodes with the specified properties.
 
 This function loops recursively over all children of startNode and adds them to
@@ -1570,7 +1621,7 @@ Parameters:
 Returns:
         number of search results
 "
-  (start-node node-handle) (name :string) (type node-type))
+  (start-node node-handle) (name string) (type node-type))
 
 
 ;; NodeHandle getNodeFindResult( int index );
@@ -1588,11 +1639,11 @@ Parameters:
 Returns:
         handle to scene node from findNodes query or 0 if result doesn't exist
 "
-  (index :int))
+  (index int))
 
 
 ;; int castRay( NodeHandle node, float ox, float oy, float oz, float dx, float dy, float dz, int numNearest );
-(defh3fun ("castRay" cast-ray) :int
+(defh3fun ("castRay" cast-ray) int
   "Performs a recursive ray collision query.
 
 This function checks recursively if the specified ray intersects the specified
@@ -1612,14 +1663,14 @@ Returns:
         number of intersections
 "
   (node node-handle)
-  (ox :float) (oy :float) (oz :float)
-  (dx :float) (dy :float) (dz :float)
-  (num-nearest :int))
+  (ox float) (oy float) (oz float)
+  (dx float) (dy float) (dz float)
+  (num-nearest int))
 
 
 
 ;; bool getCastRayResult( int index, NodeHandle *node, float *distance, float *intersection );
-(defh3fun ("getCastRayResult" get-cast-ray-result) :boolean
+(defh3fun ("getCastRayResult" get-cast-ray-result) boolean
   "Returns a result of a previous castRay query.
 
 This functions is used to access the results of a previous castRay query. The
@@ -1635,10 +1686,10 @@ Parameters:
 Returns:
         true if index was valid and data could be copied, otherwise false
 "
-  (index :int)
+  (index int)
   (node (:pointer node-handle))
-  (distance (:pointer :float))
-  (intersection (:pointer :float)))
+  (distance (:pointer float))
+  (intersection (:pointer float)))
 
 
 ;;;; Group: Group-specific scene graph functions 
@@ -1658,7 +1709,7 @@ Parameters:
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name :string))
+  (parent node-handle) (name string))
 
 
 ;;;; Group: Model-specific scene graph functions 
@@ -1679,12 +1730,12 @@ Parameters:
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name :string)
+  (parent node-handle) (name string)
   (geometry-res resource-handle))
 
 
 ;; bool setupModelAnimStage( NodeHandle modelNode, int stage, ResHandle animationRes, const char *startNode, bool additive );
-(defh3fun ("setupModelAnimStage" setup-model-anim-stage) :boolean
+(defh3fun ("setupModelAnimStage" setup-model-anim-stage) boolean
   "Configures an animation stage of a Model node.
 
 This function is used to setup the specified animation stage (channel) of the specified Model node.
@@ -1712,14 +1763,14 @@ Returns:
          true in case of success, otherwise false
 "
   (model-node node-handle)
-  (stage :int)
+  (stage int)
   (animation-res resource-handle)
-  (start-node :string)
-  (additive :boolean))
+  (start-node string)
+  (additive boolean))
 
 
 ;; bool setModelAnimParams( NodeHandle modelNode, int stage, float time, float weight );
-(defh3fun ("setModelAnimParams" set-model-anim-params) :boolean
+(defh3fun ("setModelAnimParams" set-model-anim-params) boolean
   "Sets the parameters of an animation stage in a Model node.
 
 This function sets the current animation time and weight for a specified stage
@@ -1739,11 +1790,11 @@ Parameters:
 Returns:
          true in case of success, otherwise false
 "
-  (model-node node-handle) (stage :int) (time :float) (weight :float))
+  (model-node node-handle) (stage int) (time float) (weight float))
 
 
 ;; bool setModelMorpher( NodeHandle modelNode, const char *target, float weight );
-(defh3fun ("setModelMorpher" set-model-morpher) :boolean
+(defh3fun ("setModelMorpher" set-model-morpher) boolean
   "Sets the weight of a morph target.
 
 This function sets the weight of a specified morph target. If the target
@@ -1759,7 +1810,7 @@ Parameters:
 Returns:
          true in case of success, otherwise false
 "
-  (model-node node-handle) (target :string) (weight :float))
+  (model-node node-handle) (target string) (weight float))
 
 
 ;;;; Group: Mesh-specific scene graph functions 
@@ -1784,10 +1835,10 @@ Parameters:
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name :string)
+  (parent node-handle) (name string)
   (material-res resource-handle)
-  (batch-start :int) (batch-count :int)
-  (vert-r-start :int) (vert-r-end :int))
+  (batch-start int) (batch-count int)
+  (vert-r-start int) (vert-r-end int))
 
 ;;;; Group: Joint-specific scene graph functions
 
@@ -1807,7 +1858,7 @@ Parameters:
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name :string) (joint-index :int))
+  (parent node-handle) (name string) (joint-index int))
 
 
 ;;;; Group: Light-specific scene graph functions 
@@ -1836,14 +1887,14 @@ Parameters:
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name :string)
+  (parent node-handle) (name string)
   (material-res resource-handle)
-  (lighting-context :string)
-  (shadow-context :string))
+  (lighting-context string)
+  (shadow-context string))
 
 
 ;; bool setLightContexts( NodeHandle lightNode, const char *lightingContext, const char *shadowContext );
-(defh3fun ("setLightContexts" set-light-contexts) :boolean
+(defh3fun ("setLightContexts" set-light-contexts) boolean
   "Sets the shader contexts used by a light source.
 
 This function sets the lighting and shadow shader contexts of the specified
@@ -1859,8 +1910,8 @@ Returns:
          true in case of success otherwise false
 "
   (light-node node-handle)
-  (lighting-context :string)
-  (shadow-context :string))
+  (lighting-context string)
+  (shadow-context string))
 
 ;;;; Group: Camera-specific scene graph functions
 
@@ -1880,11 +1931,11 @@ Parameters:
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name :string) (pipeline-res resource-handle))
+  (parent node-handle) (name string) (pipeline-res resource-handle))
 
 
 ;; bool setupCameraView( NodeHandle cameraNode, float fov, float aspect, float nearDist, float farDist );
-(defh3fun ("setupCameraView" setup-camera-view) :boolean
+(defh3fun ("setupCameraView" setup-camera-view) boolean
   "Sets the planes of a camera viewing frustum.
 
 This function calculates the view frustum planes of the specified camera node
@@ -1900,13 +1951,13 @@ Parameters:
 Returns:
          true in case of success otherwise false
 "
-  (camera-node node-handle) (fov :float)
-  (aspect :float) (near-dist :float)
-  (far-dist :float))
+  (camera-node node-handle) (fov float)
+  (aspect float) (near-dist float)
+  (far-dist float))
 
 
 ;; bool calcCameraProjectionMatrix( NodeHandle cameraNode, float *projMat );
-(defh3fun ("calcCameraProjectionMatrix" calc-camera-projection-matrix) :boolean
+(defh3fun ("calcCameraProjectionMatrix" calc-camera-projection-matrix) boolean
   "Calculates the camera projection matrix.
 
 This function calculates the camera projection matrix used for bringing the
@@ -1920,7 +1971,7 @@ Returns:
          true in case of success otherwise false
 "
   (camera-node node-handle)
-  (proj-mat (:pointer :float)))
+  (proj-mat (:pointer float)))
 
 
 ;;;; Group: Emitter-specific scene graph functions
@@ -1946,15 +1997,15 @@ Returns:
          handle to the created node or 0 in case of failure
 "
   (parent node-handle)
-  (name :string)
+  (name string)
   (material-res resource-handle)
   (effect-res resource-handle)
-  (max-particle-count :int)
-  (respawn-count :int))
+  (max-particle-count int)
+  (respawn-count int))
 
 
 ;; bool advanceEmitterTime( NodeHandle emitterNode, float timeDelta );
-(defh3fun ("advanceEmitterTime" advance-emitter-time) :boolean
+(defh3fun ("advanceEmitterTime" advance-emitter-time) boolean
   "Advances the time value of an Emitter node.
 
 This function advances the simulation time of a particle system and continues
@@ -1969,11 +2020,11 @@ Returns:
          true in case of success otherwise false
 "
   (emitter-node node-handle)
-  (time-delta :float))
+  (time-delta float))
 
 
 ;; bool hasEmitterFinished( NodeHandle emitterNode );
-(defh3fun ("hasEmitterFinished" has-emitter-finished) :boolean
+(defh3fun ("hasEmitterFinished" has-emitter-finished) boolean
   "Checks if an Emitter node is still alive.
 
 This function checks if a particle system is still active and has living
@@ -1997,7 +2048,7 @@ Returns:
      (defcfun (,cname ,lname :library horde3d-utils) ,result-type ,@body)))
 
 ;; bool dumpMessages();
-(defh3ufun ("dumpMessages" dump-messages) :boolean
+(defh3ufun ("dumpMessages" dump-messages) boolean
   "Writes all messages in the queue to a log file.
 
 This utility function pops all messages from the message queue and writes them
@@ -2014,7 +2065,7 @@ Returns:
 ;;     /*    Group: OpenGL-related functions */
 
 ;; bool initOpenGL( int hDC );
-(defh3ufun ("initOpenGL" init-open-gl) :boolean
+(defh3ufun ("initOpenGL" init-open-gl) boolean
   "Initializes OpenGL.
 
 This utility function initializes an OpenGL rendering context in a specified
@@ -2027,11 +2078,11 @@ Parameters:
 Returns:
         true in case of success, otherwise false
 "
-  (h-dc :int))
+  (h-dc int))
 
 
 ;; void releaseOpenGL();
-(defh3ufun ("releaseOpenGL" release-open-gl) :void
+(defh3ufun ("releaseOpenGL" release-open-gl) void
   "Releases OpenGL.
 
 This utility function destroys the previously created OpenGL rendering context.
@@ -2046,7 +2097,7 @@ Returns:
 
 
 ;; void swapBuffers();
-(defh3ufun ("swapBuffers" swap-buffers) :void
+(defh3ufun ("swapBuffers" swap-buffers) void
   "Displays the rendered image on the screen.
 
 This utility function displays the image rendered to the previously initialized
@@ -2065,7 +2116,7 @@ Returns:
 
 
 ;; const char *getResourcePath( int type );
-(defh3ufun ("getResourcePath" get-resource-path) :string
+(defh3ufun ("getResourcePath" get-resource-path) string
   "Returns  the search path of a resource type.
 
 This function returns the search path of a specified resource type.
@@ -2076,11 +2127,11 @@ Parameters:
 Returns:
         pointer to the search path string
 "
-  (type :int))
+  (type resource-type))
 
 
 ;; void setResourcePath( int type, const char *path );
-(defh3ufun ("setResourcePath" set-resource-path) :void
+(defh3ufun ("setResourcePath" set-resource-path) void
   "Sets the search path for a resource type.
 
 This function sets the search path for a specified resource type.
@@ -2092,11 +2143,11 @@ Parameters:
 Returns:
         nothing
 "
-  (type :int) (path :string))
+  (type resource-type) (path string))
 
 
 ;; bool loadResourcesFromDisk( const char *contentDir );
-(defh3ufun ("loadResourcesFromDisk" load-resources-from-disk) :boolean
+(defh3ufun ("loadResourcesFromDisk" load-resources-from-disk) boolean
   "Loads previously added resources from a data drive.
 
 This utility function loads previously added and still unloaded resources from
@@ -2111,11 +2162,11 @@ Parameters:
 Returns:
         false if at least one resource could not be loaded, otherwise true
 "
-  (content-dir :string))
+  (content-dir string))
 
 
 ;; bool createTGAImage( const unsigned char *pixels, int width, int height, int bpp, char **outData, int *outSize );
-(defh3ufun ("createTGAImage" create-tga-image) :boolean
+(defh3ufun ("createTGAImage" create-tga-image) boolean
   "Creates a TGA image in memory.
 
 This utility function allocates memory at the pointer outData and creates a TGA
@@ -2138,16 +2189,16 @@ Returns:
         false if at least one resource could not be loaded, otherwise true
 "
   (pixels (:pointer :uchar))
-  (width :int) (height :int)
-  (bpp :int)
+  (width int) (height int)
+  (bpp int)
   (out-data :pointer)
-  (out-size (:pointer :int)))
+  (out-size (:pointer int)))
 
 
 ;;;; Group: Scene graph
 
 ;; void pickRay(NodeHandle cameraNode, float nwx, float nwy, float *ox, float *oy, float *oz, float *dx, float *dy, float *dz );
-(defh3ufun ("pickRay" pick-ray) :void
+(defh3ufun ("pickRay" pick-ray) void
   "*      Calculates the ray originating at the specified camera and window coordinates
 
 This utility function takes normalized window coordinates (ranging from 0 to 1
@@ -2165,9 +2216,9 @@ Returns:
         nothing
 "
   (camera-node node-handle)
-  (nwx :float) (nwy :float)
-  (ox (:pointer :float)) (oy (:pointer :float)) (oz (:pointer :float))
-  (dx (:pointer :float)) (dy (:pointer :float)) (dz (:pointer :float)))
+  (nwx float) (nwy float)
+  (ox (:pointer float)) (oy (:pointer float)) (oz (:pointer float))
+  (dx (:pointer float)) (dy (:pointer float)) (dz (:pointer float)))
 
 
 ;; NodeHandle pickNode(NodeHandle cameraNode, float nwx, float nwy );
@@ -2186,12 +2237,12 @@ Parameters:
 Returns:
         handle of picked node or 0 if no node was hit
 "
-  (camera-node node-handle) (nwx :float) (nwy :float))
+  (camera-node node-handle) (nwx float) (nwy float))
 
 ;;;; Group: Overlays
 
 ;; void showText( const char *text, float x, float y, float size, int layer, ResHandle fontMaterialRes );
-(defh3ufun ("showText" show-text) :void
+(defh3ufun ("showText" show-text) void
   "Shows text on the screen using a font texture.
 
 This utility function uses overlays to display a text string at a specified position on the screen.
@@ -2209,12 +2260,12 @@ Parameters:
 Returns:
         nothing
 "
-  (text :string) (x :float) (y :float) (size :float)
-  (layer :int) (font-material-res resource-handle))
+  (text string) (x float) (y float) (size float)
+  (layer int) (font-material-res resource-handle))
 
 
 ;; void showFrameStats( ResHandle fontMaterialRes, float curFPS );
-(defh3ufun ("showFrameStats" show-frame-stats) :void
+(defh3ufun ("showFrameStats" show-frame-stats) void
   "Shows frame statistics on the screen.
 
 This utility function displays statistics for the current frame in the upper left corner of
@@ -2229,7 +2280,7 @@ Returns:
         nothing
 "
   (font-material-res resource-handle)
-  (cur-fps :float))
+  (cur-fps float))
 
 ;;;; Group: Terrain Extension
 
@@ -2248,7 +2299,7 @@ Parameters:
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name :string) (height-map resource-handle) (material resource-handle))
+  (parent node-handle) (name string) (height-map resource-handle) (material resource-handle))
 
 ;; ResHandle createGeometryResource( NodeHandle node, const char *resName, float meshQuality );
 (defh3fun ("createGeometryResource" create-geometry-resource) resource-handle
@@ -2267,7 +2318,7 @@ Parameters:
 Returns:
          handle to the created Geometry resource or 0 in case of failure
 "
-  (node node-handle) (res-name :string) (mesh-quality :float))
+  (node node-handle) (res-name string) (mesh-quality float))
 
 
-;;; core-bindings.lisp ends here
+;;; bindings.lisp ends here
