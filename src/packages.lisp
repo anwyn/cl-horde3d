@@ -37,13 +37,7 @@
            #:is-resource-loaded
            #:load-resource
            #:unload-resource
-           #:get-resource-parami
-           #:set-resource-parami
-           #:get-resource-paramf
-           #:set-resource-paramf
-           #:get-resource-paramstr
-           #:set-resource-paramstr
-           #:get-resource-data
+           #:resource-parameter
            #:update-resource-data
            #:query-unloaded-resource
            #:release-unused-resources
@@ -64,12 +58,7 @@
            #:set-node-transform
            #:get-node-transform-matrices
            #:set-node-transform-matrix
-           #:get-node-paramf
-           #:set-node-paramf
-           #:get-node-parami
-           #:set-node-parami
-           #:get-node-paramstr
-           #:set-node-paramstr
+           #:node-parameter
            #:get-node-aabb
            #:find-nodes
            #:get-node-find-result

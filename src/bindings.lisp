@@ -1031,7 +1031,7 @@ Returns:
 
 
 ;; const void *getResourceData( ResHandle res, int param );
-(defh3fun ("getResourceData" get-resource-data) string
+(defh3fun ("getResourceData" get-resource-data) :pointer
   "Gives access to resource data.
 
 This function returns a pointer to the specified data of a specified
@@ -1242,7 +1242,7 @@ Returns:
   (buffer-size int))
 
 
-;;;; Group: General scene graph functions
+;;;; Group: General Scene Graph Functions
 
 
 ;; int getNodeType( NodeHandle node );

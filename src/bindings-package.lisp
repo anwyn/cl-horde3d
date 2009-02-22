@@ -10,6 +10,8 @@
   (:use #:common-lisp #:cffi)
   (:shadow #:float #:boolean #:string)
   (:export #:+root-node+
+           #:resource-handle
+           #:node-handle
            #:get-version-string
            #:check-extension
            #:init
