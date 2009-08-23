@@ -157,7 +157,10 @@
   :shader
   :texture
   :particle-effect
-  :pipeline)
+  :pipeline
+  (:sound 200)
+  )
+
 
 (defbitfield resource-flags
   "Enum: resource-flags - The available flags used when adding a resource.
@@ -211,8 +214,8 @@ The available Effect resource parameters.
                         how many units per second particle is moving; valid for get-/setResourceParamf
    :move-vel-max      - Maximum value for selecting random initial value of velocity defining
                         how many units per second particle is moving; valid for get-/setResourceParamf
-   :move-vel-end-rate - Percentage of the initial translation velocity value when particle is dying;
-                        valid for get-/setResourceParamf
+   :move-vel-end-rate - Percentage of the initial translation velocity value when particle is dying; 
+                       valid for get-/setResourceParamf
    :rot-vel-min       - Minimum value for selecting random initial value of velocity defining
                         how many degrees per second particle is rotating; valid for get-/setResourceParamf
    :rot-vel-max       - Maximum value for selecting random initial value of velocity defining
@@ -250,6 +253,13 @@ The available Effect resource parameters.
    :col-a-end-rate    - Percentage of the initial alpha value when particle is dying;
                         valid for get-/setResourceParamf
 
+The available Sound resource parameters.
+
+   :sampling-rate     - Sampling rate in Hz [type: int, read-only]
+   :bit-depth         - Bit-depth of the sound [type: int, read-only]
+   :channels          - Number of channels [type: int, read-only]
+   :bit-rate          - Average bitrate [type: int, read-only]
+   :runtime           - Total runtime of the sound in seconds [type: float, read-only]
 "
   (:vertex-count 200)
   :index-count
@@ -290,7 +300,15 @@ The available Effect resource parameters.
   :col-b-end-rate
   :col-a-min
   :col-a-max
-  :col-a-end-rate)
+  :col-a-end-rate
+
+  ;; sound extension resource parameters
+  (:sampling-rate 20000)
+  :bit-depth
+  :channels
+  :bit-rate
+  :runtime)
+
 
 (defcenum node-type
   "Enum: node-type: The available scene node types.
@@ -304,6 +322,8 @@ The available Effect resource parameters.
    :camera          - Camera giving view on scene
    :emitter         - Particle system emitter
    :terrain         - Terrain node
+   :listener        - Listener node
+   :sound           - Sound node
 "
   (:undefined 0)
   :group
@@ -313,7 +333,9 @@ The available Effect resource parameters.
   :light
   :camera
   :emitter
-  (:terrain 100))
+  (:terrain 100)
+  (:listener 201)
+  (:sound 202))
 
 
 (defcenum node-parameter
@@ -342,7 +364,7 @@ The available Model node parameters:
    :lod-dist-3           - Distance to camera from which on LOD3 is used
                            (may not be smaller than LodDist2) (default: infinite) [type: float]
    :lod-dist-4          - Distance to camera from which on LOD4 is used
-		                    (may not be smaller than LodDist3) (default: infinite) [type: float]
+                                    (may not be smaller than LodDist3) (default: infinite) [type: float]
 
    The available Mesh node parameters:
 
@@ -352,7 +374,7 @@ The available Model node parameters:
    :vert-r-start         - First vertex in Geometry resource of parent Model node [type: int, read-only]
    :vert-r-end           - Last vertex in Geometry resource of parent Model node [type: int, read-only]
    :lod-level            - LOD level of Mesh; the mesh is only rendered if its LOD level corresponds to
-		           the model's current LOD level which is calculated based on the LOD distances
+                           the model's current LOD level which is calculated based on the LOD distances
                            (default: 0) [type: int]
 
 The available Joint node parameters:
@@ -400,13 +422,43 @@ The available Emitter node parameters:
    :force-Z              - Z-component of force vector applied to particles (default: 0.0) [type: float]
 
 The available Terrain node parameters:
-		
+                
    :height-map-res       - Height map texture; must be square and a power of two [type: ResHandle, write-only]
    :material-res         - Material resource used for rendering the terrain [type: ResHandle]
    :mesh-quality         - Constant controlling the overall resolution of the terrain mesh (default: 50.0) [type: float]
    :skirt-height         - Height of the skirts used to hide cracks (default: 0.1) [type: float]
    :block-size           - Size of a terrain block that is drawn in a single render call; must be 2^n+1 (default: 17) [type: int]
 
+The available Listener node parameters.
+   :master-gain          - Amplitude multiplier (volume), this affects all sounds (default: 1.0) [type: float]
+   :doppler-factor       - *currently has no effect* Exaggeration factor for doppler effect (default: 1.0) [type: float]
+   :speed-of-sound       - *currently has no effect* Speed of sound in same units as velocities (default: 343.3) [type: float]
+
+The available Sound node parameters.
+
+   :sound-res            - The resource used for audio playback [type: ResHandle]
+   :gain                 - Amplitude multiplier (volume) (default: 1.0) [type: float]
+   :pitch                - Pitch shift (value range: 0.5-2.0; default: 1.0) [type: float]
+   :offset               - Position of the sound's playback in seconds [type: float]
+   :loop                 - Determines if the sound should loop after it reaches the end (Values: 0, 1) [type: int]
+   :max-distance         - This is used for distance based attenuation calculations, for explanation on how this
+                           exactly is used in each distance model see the DistanceModels section. This will also clamp
+                           distances greater than this value if the InverseDistanceClamped, LinearDistanceClamped or
+                           ExponentDistanceClamped distance model is used. (default: MAX_FLOAT) [type: float]
+   :rolloff-factor       - This is used for distance based attenuation calculations, for explanation on how this
+                           exactly is used in each distance model see the DistanceModels section. (default: 1.0) [type: float]
+   :reference-distance   - This is used for distance based attenuation calculations, for explanation on how this
+                           exactly is used in each distance model see the DistanceModels section. This will also clamp
+                           distances below this value if the InverseDistanceClamped, LinearDistanceClamped or
+                           ExponentDistanceClamped distance model is used. (default: 1.0) [type: float]
+   :min-gain             - This indicates the minimal gain guaranteed for the sound. At the end of processing of various attenuation
+                           factors such as distance based attenuation and the sound's Gain value, the effective gain calculated is
+                           compared to this value. If the effective gain is lower than this value, this value is applied. This happens
+                           before the listener's MasterGain is applied. (value range: 0.0-1.0; default: 0.0) [type: float]
+   :max-gain             - This indicates the maximal gain permitted for the sound. At the end of processing of various attenuation
+                           factors such as distance based attenuation and the sound's Gain value, the effective gain calculated is
+                           compared to this value. If the effective gain is higher than this value, this value is applied. This happens
+                           before the listener's MasterGain is applied. (value range: 0.0-1.0; default: 1.0) [type: float]
 "
   ;; scene-node-params
   (:name 1)
@@ -476,7 +528,63 @@ The available Terrain node parameters:
   :terrain-material
   :mesh-quality
   :skirt-height
-  :block-size)
+  :block-size
+  
+  ;; sound extension node params
+  (:master-gain  20000)
+  :doppler-factor
+  :speed-of-sound
+
+  (:sound-res  21000)
+  :gain
+  :pitch
+  :offset
+  :loop
+  :max-distance
+  :rolloff-factor
+  :reference-distance
+  :min-gain
+  :max-gain)
+
+  
+(defcenum distance-model
+  "The available distance models.
+
+The variables used in the calculations explained::
+  - Distance = the distance between the listener and sound node
+  - Gain = the sound's volume after distance based attenuation
+  - ReferenceDistance, RolloffFactor and MaxDistance = sound node parameters
+
+  :none                      - No distance based attenuation will be applied.
+  :inverse-distance          - Distance based attenuation will be calculated using the following formula:
+                               Gain = ReferenceDistance / (ReferenceDistance + RolloffFactor * (Distance-ReferenceDistance));
+                               ReferenceDistance indicates the distance which the listener will experience the sound's Gain value.
+                               RolloffFactor can used to increase or decrease the range of a sound by increasing or decreasing the attenuation, respectivly.
+  :inverse-distance-clamped  - This is the same as InverseDistance but it clamps the Distance before calculating the effective Gain:
+                               Distance = max(Distance, ReferenceDistance);
+                               Distance = min(Distance, MaxDistance);
+                               (default distance model)
+  :linear-distance           - This models a linear drop-off in gain as distance increases between the sound and listener.
+                               Distance based attenuation will be calculated using the following formula:
+                               Gain = (1-RolloffFactor * (Distance-ReferenceDistance) / (MaxDistance-ReferenceDistance));
+  :linear-distance-clamped   - This is the same as LinearDistance but it clamps the Distance before calculating the effective Gain:
+                               Distance = max(Distance, ReferenceDistance);
+                               Distance = min(Distance, MaxDistance);
+  :exponent-distance         - This models an exponential drop-off in gain as distance increases between the sound and listener.
+                               Distance based attenuation will be calculated using the following formula:
+                               Gain = (Distance / ReferenceDistance) ^ (-RolloffFactor);
+                               where the ^ operation raises it's first operand to the power of it's second operand.
+  :exponent-distance-clamped - This is the same as ExponentDistance but it clamps the Distance before calculating the effective Gain:
+                               Distance = max(Distance, ReferenceDistance);
+                               Distance = min(Distance, MaxDistance);
+"
+  :none
+  :inverse-distance
+  :inverse-distance-clamped
+  :linear-distance
+  :linear-distance-clamped
+  :exponent-distance
+  :exponent-distance-clamped)
 
 
 ;;; Helper macro to define a horde3d API function and declare it inline.
@@ -592,13 +700,13 @@ Returns:
 ;; DLL bool finalizeFrame();
 (defh3fun ("finalizeFrame" finalize-frame) boolean
   "Marker for end of frame.
-		
+                
 This function tells the engine that the current frame is finished and that all
 subsequent rendering operations will be for the next frame.
-		
+                
 Parameters:
         none
-			
+                        
 Returns:
         true in case of success, otherwise false
 ")
@@ -698,7 +806,7 @@ Returns:
 ;;                   ResHandle materialRes, int layer);
 (defh3fun ("showOverlay" show-overlay) void
   "Shows an overlay on the screen.
-		
+                
 This function displays an overlay with a specified material at a specified position on the screen.
 An overlay is a 2D image that can be used to render 2D GUI elements. The coordinate system
 used has its origin (0, 0) at the top-left corner of the screen and its maximum (1, 1) at
@@ -716,9 +824,9 @@ Parameters:
         colR, colG, colB, colA  - color of the overlay that is set for the material's shader
         materialRes             - material resource used for rendering
         layer                   - layer index of the overlay (Values: from 0 to 7)
-	
+        
 Returns:
-	nothing
+        nothing
 "
   (x-tl float) (y-tl float) (u-tl float) (v-tl float)
   (x-bl float) (y-bl float) (u-bl float) (v-bl float)
@@ -784,17 +892,17 @@ Returns:
 ;; DLL ResHandle getNextResource( int type, ResHandle start );
 (defh3fun ("getNextResource" get-next-resource) resource-handle
   "Returns the next resource of the specified type.
-		
+                
 This function searches the next resource of the specified type and returns its handle.
 The search begins after the specified start handle. If a further resource of the queried type
 does not exist, a zero handle is returned. The function can be used to iterate over all
 resources of a given type by using as start the return value of the previous iteration step.
 The first iteration step should start at 0 and iteration can be ended when the function returns 0.
-		
+                
 Parameters:
         type   - type of resource to be searched (ResourceTypes::Undefined for all types)
         start  - resource handle after which the search begins (can be 0 for beginning of resource list)
-			
+                        
 Returns:
         handle to the found resource or 0 if it does not exist
 "
@@ -1212,12 +1320,12 @@ Returns:
   "Binds a texture to a sampler of a Material resource.
 
 This function binds a texture resource to the specified sampler of the specified material.
-		
+                
 Parameters:
         materialRes  - handle to the Material resource to be accessed
         name         - name of the sampler
         texRes       - handle to texture resource
-			
+                        
 Returns:
         true in case of success, otherwise false
 "
@@ -2112,12 +2220,12 @@ Returns:
 ;; DLL void freeMem( char **ptr );
 (defh3ufun ("freeMem" free-mem) void
   "Frees memory allocated by the Utility Library.
-		
+                
 This utility function frees the memory that was allocated by another function of the Utility Library.
-		
+                
 Parameters:
   ptr  - address of a pointer that references to memory allocated by the Utility Library
-			
+                        
 Returns:
   nothing
 "
@@ -2403,5 +2511,220 @@ Returns:
 "
   (node node-handle) (res-name string) (mesh-quality float))
 
+
+;;;; Group: Sound Extension
+
+;;; Basic functions 
+
+(defh3fun ("openDevice" open-device) boolean
+  "Opens a sound device for playback.
+
+This function opens and initializes a sound device for playback. This needs to be called before
+any sound resources or nodes can be created or used. It will fail if another device is already
+open.
+
+Parameters:
+        device  - name of the device to open (use NULL for default device)
+
+Returns:
+        true in case of success, otherwise false
+"
+  (device string))
+
+
+(defh3fun ("closeDevice" close-device) void
+  "Closes the currently open sound device.
+
+This function closes the currently open sound device.
+
+Parameters:
+        none
+
+Returns:
+        nothing
+")
+
+
+(defh3fun ("getOpenDevice" get-open-device) string
+  "Gets the name of the currently open sound device.
+
+This function returns the name of the currently open sound device.
+
+Parameters:
+        none
+
+Returns:
+        name of the open device or NULL is none is open.
+")
+
+
+(defh3fun ("queryDevice" query-device) string
+  "Returns the name of a sound device.
+
+This function returns the name of a sound device from an internal list. If the index specified
+is greater than the number of the available sound devices, NULL is returned.
+
+Parameters:
+        index   - index of sound device within the internal list (starting with 0)
+
+Returns:
+        name of a sound device or NULL
+"
+          (index int))
+
+
+(defh3fun ("getDistanceModel" get-distance-model) distance-model
+  "Gets the active distance model.
+
+This function return the distance model used for calculating distance based attenuation.
+
+Parameters:
+        none
+
+Returns:
+        currently active distance model
+")
+
+
+(defh3fun ("setDistanceModel" set-distance-model) boolean
+  "Sets the active distance model.
+
+This function sets the distance model used for calculating distance based attenuation.
+
+Parameters:
+        model   - distance model to use
+
+Returns:
+        true if the distance model could be set, otherwise false
+"
+  (model distance-model))
+
+;;;; Group: Listener-specific scene graph functions 
+
+
+;;;     DLL NodeHandle addListenerNode( NodeHandle parent, const char *name );
+(defh3fun ("addListenerNode" add-listener-node) node-handle
+  "Adds a Listener node to the scene.
+
+This function creates a new Listener node and attaches it to the specified parent node.
+
+Parameters:
+        parent  - handle to parent node to which the new node will be attached
+        name    - name of the node
+
+Returns:
+         handle to the created node or 0 in case of failure
+"
+  (parent node-handle) (name string))
+
+
+;;;     DLL NodeHandle getActiveListener();
+(defh3fun ("getActiveListener" get-active-listener) node-handle
+  "Returns the handle of the active Listener node.
+
+This function returns the handle of the currently active Listener node.
+
+Parameters:
+        none
+
+Returns:
+        handle to active Listener node or 0 if there is no active Listener node
+")
+
+
+;;;     DLL bool setActiveListener( NodeHandle listenerNode );
+(defh3fun ("setActiveListener" set-active-listener) boolean
+  "Sets the active Listener node.
+
+This function sets the currently active Listener node. This node will act as the
+ears and all 3D sound calculations will be based on this node's position and orientation.
+
+Parameters:
+        listener-node   - handle to the Listener node.
+
+Returns:
+        true in case of success, otherwise false
+"
+  (listener-node node-handle))
+
+
+;;;; Group: Sound-specific scene graph functions 
+
+;;; DLL NodeHandle addSoundNode( NodeHandle parent, const char *name, ResHandle soundRes );
+(defh3fun ("addSoundNode" add-sound-node) node-handle
+  "Adds a Sound node to the scene.
+
+This function creates a new Sound node and attaches it to the specified parent node.
+
+Parameters:
+        parent          - handle to parent node to which the new node will be attached
+        name            - name of the node
+        sound-resource  - handle to Sound resource which will be used for playback
+
+Returns:
+        handle to the created node or 0 in case of failure
+"
+  (parent node-handle) (name string) (sound-resource resource-handle))
+
+
+;;; DLL bool isSoundPlaying( NodeHandle soundNode );
+(defh3fun ("isSoundPlaying" sound-playing-p) boolean
+  "Checks if an Sound node is playing.
+
+This function returns whether the Sound node is currently playing or not.
+
+Parameters:
+        sound-node - handle to the Sound node
+
+Returns:
+        true if the Sound node is currently playing, otherwise false
+"
+  (sound-node node-handle))
+
+
+;;; DLL void playSound( NodeHandle soundNode );
+(defh3fun ("playSound" play-sound) void
+  "Starts the audio playback of a Sound node.
+
+This function will start the audio playback of a Sound node.
+
+Parameters:
+        sound-node - handle to the Sound node
+
+Returns:
+        nothing
+"
+  (sound-node node-handle))
+
+
+;;; DLL void pauseSound( NodeHandle soundNode );
+(defh3fun ("pauseSound" pause-sound) void
+  "Pauses the playback of a Sound node.
+
+This function will pause the playback of a Sound node.
+
+Parameters:
+        sound-node - handle to the Sound node
+
+Returns:
+        nothing
+"
+  (sound-node node-handle))
+
+
+;;; DLL void rewindSound( NodeHandle soundNode );
+(defh3fun ("rewindSound" rewind-sound) void
+  "Rewinds the playback of a Sound node.
+
+This function will rewind the playback of a Sound node. If the Sound node is
+playing while being rewinded it will continue to play from it's rewinded position.
+
+Parameters:
+        sound-node - handle to the Sound node
+
+Returns:
+        nothing
+"
+  (sound-node node-handle))
 
 ;;; bindings.lisp ends here
