@@ -12,9 +12,7 @@
 (in-package :horde3d-examples)
 
 (defclass knight-application (example-application)
-  ((%hdr-pipeline      :accessor hdr-pipeline      :initarg :hdr-pipeline)
-   (%fwd-pipeline      :accessor fwd-pipeline      :initarg :fwd-pipeline)
-   (%particle-sys-node :accessor particle-sys-node :initarg :particle-sys-node)
+  ((%particle-sys-node :accessor particle-sys-node :initarg :particle-sys-node)
    (%knight-node       :accessor knight-node       :initarg :knight-node)))
 
 (defun knight ()
@@ -31,15 +29,9 @@
 
 
 (defmethod app-init ((app knight-application))
-  (h3d:set-options :load-textures 1
-                   :tex-compression 0
-                   :fast-animation 0
-                   :max-anisotropy 4
-                   :shadow-map-size 2048)
+  
   ;; Add resources
-  (let ((hdr-pipe-res (h3d:add-resource :pipeline "pipelines/hdr.pipeline.xml" 0))
-        (fwd-pipe-res (h3d:add-resource :pipeline "pipelines/forward.pipeline.xml" 0))
-        (env-res (h3d:add-resource :scene-graph "models/sphere/sphere.scene.xml" 0))
+  (let ((env-res (h3d:add-resource :scene-graph "models/sphere/sphere.scene.xml" 0))
         (knight-res (h3d:add-resource :scene-graph "models/knight/knight.scene.xml" 0))
         (knight-anim-res-1 (h3d:add-resource :animation "animations/knight_order.anim" 0))
         (knight-anim-res-2 (h3d:add-resource :animation "animations/knight_attack.anim" 0))
@@ -47,15 +39,13 @@
 
     (setf (font-resource app) (h3d:add-resource :material "overlays/font.material.xml" 0)
           (panel-resource app) (h3d:add-resource :material "overlays/panel.material.xml" 0)
-          (logo-resource app) (h3d:add-resource :material "overlays/logo.material.xml" 0)
-          (hdr-pipeline app) hdr-pipe-res
-          (fwd-pipeline app) fwd-pipe-res)
+          (logo-resource app) (h3d:add-resource :material "overlays/logo.material.xml" 0))
 
     ;; Load resources
     (h3d:load-resources-from-disk (namestring (content-path app)))
 
     ;; add camera
-    (setf (camera-node app) (h3d:add-camera-node h3d:+root-node+ "Camera" hdr-pipe-res))
+    (setf (camera-node app) (h3d:add-camera-node h3d:+root-node+ "Camera" (hdr-pipeline app)))
 
     (let ((env (h3d:add-nodes h3d:+root-node+ env-res))
           (knight (h3d:add-nodes h3d:+root-node+ knight-res)))
@@ -153,13 +143,6 @@
 
   ;; Write all mesages to log file
   (h3d:dump-messages))
-
-
-(defmethod app-key-press-event ((app knight-application) (key (eql :sdl-key-f3)))
-  (with-accessors ((cam camera-node)) app
-    (if (eql (h3d:node-parameter cam :pipeline) (hdr-pipeline app))
-        (setf (h3d:node-parameter cam :pipeline) (fwd-pipeline app))
-        (setf (h3d:node-parameter cam :pipeline) (hdr-pipeline app)))))
 
 
 ;;; knight.lisp ends here

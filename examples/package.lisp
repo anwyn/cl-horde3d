@@ -12,6 +12,7 @@
 (in-package :cl-user)
 
 (defpackage #:horde3d-examples
-  (:use #:common-lisp #:horde3d))
+  (:use #:common-lisp #:horde3d)
+  (:export #:knight))
 
 ;;; package.lisp ends here
