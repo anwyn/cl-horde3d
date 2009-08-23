@@ -9,10 +9,6 @@
 ;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
 ;;; 
 
-(in-package :cl-user)
-
-(defpackage #:horde3d-examples
-  (:use #:common-lisp #:horde3d))
 
 (in-package :horde3d-examples)
 

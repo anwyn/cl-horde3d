@@ -17,7 +17,8 @@
   :depends-on (:horde3d :cl-opengl :cl-glu :cl-glfw :lispbuilder-sdl)
   :components ((:static-file "horde3d-examples.asd")
                (:module "examples"
-                        :components ((:file "examples")
+                        :components ((:file "package")
+									 (:file "examples" :depends-on ("package"))
                                      (:file "knight" :depends-on ("examples"))))))
 
 
