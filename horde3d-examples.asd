@@ -1,11 +1,11 @@
  ;;; -*- lisp -*-
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (unless (find-package '#:horde3d.system)
-    (defpackage #:horde3d.system
+  (unless (find-package '#:horde3d-system)
+    (defpackage #:horde3d-system
       (:use :common-lisp :asdf))))
 
-(in-package #:horde3d.system)
+(in-package #:horde3d-system)
 
 (defsystem :horde3d-examples
   :description "The Horde3d examples ported to lisp." 
@@ -14,7 +14,7 @@
   :author "Ole Arndt <ole@sugarshark.com>"
   :maintainer "Ole Arndt <ole@sugarshark.com>"
   :licence "LGPL"
-  :depends-on (:horde3d :lispbuilder-sdl)
+  :depends-on (:horde3d :cl-opengl :cl-glu :cl-glfw :lispbuilder-sdl)
   :components ((:static-file "horde3d-examples.asd")
                (:module "examples"
                         :components ((:file "examples")

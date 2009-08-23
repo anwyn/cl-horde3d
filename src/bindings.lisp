@@ -88,7 +88,7 @@
  :max-num-messages    - Defines the maximum number of messages that can be stored in the message queue (Default: 512)
  :trilinear-filtering - Enables or disables trilinear filtering for textures; only affects textures
                         that are loaded after setting the option. (Values: 0, 1; Default: 1)
- :anisotropy-factor   - Sets the quality for anisotropic filtering; only affects textures that
+ :max-anisotropy   - Sets the quality for anisotropic filtering; only affects textures that
                         are loaded after setting the option. (Values: 1, 2, 4, 8; Default: 1)
  :tex-compression     - Enables or disables texture compression; only affects textures that are
                         loaded after setting the option. (Values: 0, 1; Default: 0)
@@ -101,18 +101,22 @@
  :wireframe-mode      - Enables or disables wireframe rendering
  :debug-view-mode     - Enables or disables debug view where geometry is rendered in wireframe without shaders and
                         lights are visualized using their screen space bounding box. (Values: 0, 1; Default: 0)
+ :dump-failed-shaders - Enables or disables storing of shader code that failed to compile in a text file; this can be
+                        useful in combination with the line numbers given back by the shader compiler.
+                       (Values: 0, 1; Default: 0)
 "
   (:max-log-level 1)
   :max-num-messages
   :trilinear-filtering
-  :anisotropy-factor
+  :max-anisotropy
   :tex-compression
   :load-textures
   :fast-animation
   :shadow-map-size
   :sample-count
   :wireframe-mode
-  :debug-view-mode)
+  :debug-view-mode
+  :dump-failed-shaders)
 
 (defcenum engine-stats
   "The available engine statistic parameters.
@@ -120,10 +124,14 @@
  :tri-count        - Number of triangles that were pushed to the renderer
  :batch-count      - Number of batches (draw calls)
  :light-pass-count - Number of lighting passes
+ :frame-time       - Time in ms between two finalizeFrame calls
+ :custom-time      - Value of custom timer (useful for profiling engine functions)
 "
   (:tri-count 100)
   :batch-count
-  :light-pass-count)
+  :light-pass-count
+  :frame-time
+  :custom-time)
 
 (defcenum resource-type
   "Enum: resource-type - The available resource types.
@@ -147,9 +155,8 @@
   :material
   :code
   :shader
-  :texture-2d
-  :texture-cube
-  :effect
+  :texture
+  :particle-effect
   :pipeline)
 
 (defbitfield resource-flags
@@ -163,11 +170,8 @@
    NoTexRepeat             - Disables tiling (repeat mode) for textures and enables clamping instead.
 "
   (:no-query #x0001)
-  :no-tex-potconversion
-  :no-tex-compression
-  :no-tex-mipmaps
-  :no-tex-filtering
-  (:no-tex-repeat #x0003))
+  (:no-tex-compression #x0002)
+  (:no-tex-mipmaps #x0004))
 
 (defcenum resource-parameter
     "
@@ -178,11 +182,11 @@ The available Geometry resource parameters:
    :vertex-data  - Vertex positon data (pointer to float); valid for getResourceData
    :index-data   - Triangle indices (pointer to uint); valid for getResourceData
 
- The available Animation resource parameters:
+The available Animation resource parameters:
 
    :frame-count   - Number of animation frames; valid for getResourceParami
 
- The available Material resource parameters:
+The available Material resource parameters:
 
    :class           - Hierarchical class name (Default: empty string);
                              valid for get-/setResourceParamstr
@@ -190,86 +194,61 @@ The available Geometry resource parameters:
                              valid for get-/setResourceParami
    :shader      - Shader resource used for rendering;
                              valid for get-/setResourceParami
-   :tex-unit-0       - Texture resource for the first unit;
-                             valid for get-/setResourceParami
-   :tex-unit-1       - Texture resource for the second unit;
-                             valid for get-/setResourceParami
-   :tex-unit-2       - Texture resource for the third unit;
-                             valid for get-/setResourceParami
-   :tex-unit-3       - Texture resource for the fourth unit;
-                             valid for get-/setResourceParami
-   :tex-unit-4       - Texture resource for the fifth unit;
-                             valid for get-/setResourceParami
-   :tex-unit-5       - Texture resource for the sixth unit;
-                             valid for get-/setResourceParami
-   :tex-unit-6       - Texture resource for the seventh unit;
-                             valid for get-/setResourceParami
-   :tex-unit-7       - Texture resource for the eighth unit;
-                             valid for get-/setResourceParami
-   :tex-unit-8       - Texture resource for the ninth unit;
-                             valid for get-/setResourceParami
-   :tex-unit-9       - Texture resource for the tenth unit;
-                             valid for get-/setResourceParami
-   :tex-unit-10      - Texture resource for the eleventh unit;
-                             valid for get-/setResourceParami
-   :tex-unit-11      - Texture resource for the twelfth unit;
-                                       valid for get-/setResourceParami
 
    The available Texture2D and TextureCube resource parameters.
 
    :pixel-data - Image pixel data (pointer to unsigned char); valid for updateResourceData for Texture2D
-   :width     - Image width in pixels; valid for getResourceParami
-   :height    - Image height in pixels; valid for getResourceParami
-   :comps     - Number of channels in image (e.g. an RGBA image has 4 channels); valid for getResourceParami
-   :hdr        - Flag indicating whether the texture is a HDR image (returns 1) or a usual 8 bit per channel image (returns 0);
-                 valid for getResourceParami
+   :tex-type   - Texture type (2D or Cube); valid for getResourceParami
+   :tex-format - Pixel format; valid for getResourceParami
+   :width      - Image width in pixels; valid for getResourceParami
+   :height     - Image height in pixels; valid for getResourceParami
 
-   The available Effect resource parameters.
+The available Effect resource parameters.
 
    :life-min          - Minimum value for selecting random life time; valid for get-/setResourceParamf
-   :life-max              - Maximum value for selecting random life time; valid for get-/setResourceParamf
-   :move-vel-min       - Minimum value for selecting random initial value of velocity defining
-                                          how many units per second particle is moving; valid for get-/setResourceParamf
-   :move-vel-max       - Maximum value for selecting random initial value of velocity defining
-                                          how many units per second particle is moving; valid for get-/setResourceParamf
-   :move-vel-end-rate   - Percentage of the initial translation velocity value when particle is dying;
-                                          valid for get-/setResourceParamf
-   :rot-vel-min        - Minimum value for selecting random initial value of velocity defining
-                                          how many degrees per second particle is rotating; valid for get-/setResourceParamf
-   :rot-vel-max        - Maximum value for selecting random initial value of velocity defining
-                                          how many degrees per second particle is rotating; valid for get-/setResourceParamf
-   :rot-vel-end-rate    - Percentage of the initial rotation velocity value when particle is dying;
-                                          valid for get-/setResourceParamf
-   :size-vel-min       - Minimum value for selecting random initial size value;
-                      valid for get-/setResourceParamf
-   :size-vel-max       - Maximum value for selecting random initial size value;
-                                          valid for get-/setResourceParamf
-   :size-vel-end-rate   - Percentage of the initial size value when particle is dying;
-                                          valid for get-/setResourceParamf
-   :col-r-min        - Minimum value for selecting random initial red color value;
-                                          valid for get-/setResourceParamf
-   :col-r-max        - Maximum value for selecting random initial red color value;
-                                          valid for get-/setResourceParamf
+   :life-max          - Maximum value for selecting random life time; valid for get-/setResourceParamf
+   :move-vel-min      - Minimum value for selecting random initial value of velocity defining
+                        how many units per second particle is moving; valid for get-/setResourceParamf
+   :move-vel-max      - Maximum value for selecting random initial value of velocity defining
+                        how many units per second particle is moving; valid for get-/setResourceParamf
+   :move-vel-end-rate - Percentage of the initial translation velocity value when particle is dying;
+                        valid for get-/setResourceParamf
+   :rot-vel-min       - Minimum value for selecting random initial value of velocity defining
+                        how many degrees per second particle is rotating; valid for get-/setResourceParamf
+   :rot-vel-max       - Maximum value for selecting random initial value of velocity defining
+                        how many degrees per second particle is rotating; valid for get-/setResourceParamf
+   :rot-vel-end-rate  - Percentage of the initial rotation velocity value when particle is dying;
+                        valid for get-/setResourceParamf
+   :size-vel-min      - Minimum value for selecting random initial size value;
+                        valid for get-/setResourceParamf
+   :size-vel-max      - Maximum value for selecting random initial size value;
+                        valid for get-/setResourceParamf
+   :size-vel-end-rate - Percentage of the initial size value when particle is dying;
+                        valid for get-/setResourceParamf
+   :col-r-min         - Minimum value for selecting random initial red color value;
+                        valid for get-/setResourceParamf
+   :col-r-max         - Maximum value for selecting random initial red color value;
+                        valid for get-/setResourceParamf
    :col-r-end-rate    - Percentage of the initial red value when particle is dying;
-                                          valid for get-/setResourceParamf
-   :col-g-min        - Minimum value for selecting random initial green color value;
-                                          valid for get-/setResourceParamf
-   :col-g-max        - Maximum value for selecting random initial green color value;
-                                          valid for get-/setResourceParamf
+                        valid for get-/setResourceParamf
+   :col-g-min         - Minimum value for selecting random initial green color value;
+                        valid for get-/setResourceParamf
+   :col-g-max         - Maximum value for selecting random initial green color value;
+                        valid for get-/setResourceParamf
    :col-g-end-rate    - Percentage of the initial green value when particle is dying;
-                                          valid for get-/setResourceParamf
-   :col-b-min        - Minimum value for selecting random initial blue color value;
-                                          valid for get-/setResourceParamf
-   :col-b-max        - Maximum value for selecting random initial blue color value;
-                                          valid for get-/setResourceParamf
+                        valid for get-/setResourceParamf
+   :col-b-min         - Minimum value for selecting random initial blue color value;
+                        valid for get-/setResourceParamf
+   :col-b-max         - Maximum value for selecting random initial blue color value;
+                        valid for get-/setResourceParamf
    :col-b-end-rate    - Percentage of the initial blue value when particle is dying;
-                                          valid for get-/setResourceParamf
-   :col-a-min        - Minimum value for selecting random initial alpha color value;
-                                          valid for get-/setResourceParamf
-   :col-a-max        - Maximum value for selecting random initial alpha color value;
-                                          valid for get-/setResourceParamf
+                        valid for get-/setResourceParamf
+   :col-a-min         - Minimum value for selecting random initial alpha color value;
+                        valid for get-/setResourceParamf
+   :col-a-max         - Maximum value for selecting random initial alpha color value;
+                        valid for get-/setResourceParamf
    :col-a-end-rate    - Percentage of the initial alpha value when particle is dying;
-                                          valid for get-/setResourceParamf
+                        valid for get-/setResourceParamf
 
 "
   (:vertex-count 200)
@@ -282,24 +261,12 @@ The available Geometry resource parameters:
   (:class 400)
   :link
   :shader
-  :tex-unit-0
-  :tex-unit-1
-  :tex-unit-2
-  :tex-unit-3
-  :tex-unit-4
-  :tex-unit-5
-  :tex-unit-6
-  :tex-unit-7
-  :tex-unit-8
-  :tex-unit-9
-  :tex-unit-10
-  :tex-unit-11
 
   (:pixel-data 700)
+  :tex-type
+  :tex-format
   :width
   :height
-  :comps
-  :hdr
   
   (:life-min 900)
   :life-max
@@ -368,6 +335,14 @@ The available Model node parameters:
 
    :geometry             - Geometry resource used for the model [type: ResHandle]
    :software-skinning    - Enables or disables software skinning (default: 0) [type: int]
+   :lod-dist-1           - Distance to camera from which on LOD1 is used (default: infinite) [type: float]
+                           (must be a positive value larger than 0.0)
+   :lod-dist-2           - Distance to camera from which on LOD2 is used
+                           (may not be smaller than LodDist1) (default: infinite) [type: float]
+   :lod-dist-3           - Distance to camera from which on LOD3 is used
+                           (may not be smaller than LodDist2) (default: infinite) [type: float]
+   :lod-dist-4          - Distance to camera from which on LOD4 is used
+		                    (may not be smaller than LodDist3) (default: infinite) [type: float]
 
    The available Mesh node parameters:
 
@@ -376,6 +351,9 @@ The available Model node parameters:
    :batch-count          - Number of triangle indices used for drawing mesh [type: int, read-only]
    :vert-r-start         - First vertex in Geometry resource of parent Model node [type: int, read-only]
    :vert-r-end           - Last vertex in Geometry resource of parent Model node [type: int, read-only]
+   :lod-level            - LOD level of Mesh; the mesh is only rendered if its LOD level corresponds to
+		           the model's current LOD level which is calculated based on the LOD distances
+                           (default: 0) [type: int]
 
 The available Joint node parameters:
 
@@ -411,7 +389,7 @@ The available Camera node parameters:
 The available Emitter node parameters:
 
    :emitter-material     - Material resource used for rendering [type: ResHandle]
-   :effect-res           - Effect resource which configures particle properties [type: ResHandle]
+   :particle-effect-res  - Effect resource which configures particle properties [type: ResHandle]
    :max-count            - Maximal number of particles living at the same time [type: int]
    :respawn-count        - Number of times a single particle is recreated after dying (-1 for infinite) [type: int]
    :delay                - Time in seconds before emitter begins creating particles (default: 0.0) [type: float]
@@ -441,6 +419,10 @@ The available Terrain node parameters:
   ;; model-node-params
   (:geometry 200)
   :software-skinning
+  :lod-dist-1
+  :lod-dist-2
+  :lod-dist-3
+  :lod-dist-4
 
   ;; mesh-node-params
   (:mesh-material 300)
@@ -448,6 +430,7 @@ The available Terrain node parameters:
   :batch-count
   :vert-r-start
   :vert-r-end
+  :lod-level
 
   ;; joint-node-params
   (:joint-index 400)
@@ -478,7 +461,7 @@ The available Terrain node parameters:
   
   ;; emitter-node-params
   (:emitter-material 700)
-  :effect-res
+  :particle-effect-res
   :max-count
   :respawn-count
   :delay
@@ -487,8 +470,8 @@ The available Terrain node parameters:
   :force-X
   :force-Y
   :force-Z
-  ;; terrain node params
 
+  ;; terrain node params
   (:height-map-res 10000)
   :terrain-material
   :mesh-quality
@@ -563,23 +546,29 @@ Returns:
 ")
 
 
-;; void resize( int x, int y, int width, int height );
-(defh3fun ("resize" resize) void
-  "Resizes the viewport.
-
-  This function sets the dimensions of the rendering viewport. It has to be called
-  after initialization and whenever the viewport size changes.
-
+;; void setupViewport( int x, int y, int width, int height, bool resizeBuffers);
+(defh3fun ("setupViewport" setup-viewport) void
+  "Sets the location and size of the viewport.
+                
+  This function sets the location and size of the viewport. It has to be called
+  after engine initialization and whenever the size of the rendering context/window
+  changes. The resizeBuffers parameter specifies whether render targets with a size
+  relative to the viewport dimensions should be resized. This is usually desired
+  after engine initialization and when the window is resized but not for just rendering
+  to a part of the framebuffer.
+   
+   
   Parameters:
-          x               - the x-position of the viewport in the rendering context
-          y               - the y-position of the viewport in the rendering context
-          width   - the width of the viewport
-          height  - the height of the viewport
-
+          x              - the x-position of the lower left corner of the viewport rectangle
+          y              - the y-position of the lower left corner of the viewport rectangle
+          width          - the width of the viewport
+          height         - the height of the viewport
+          resizeBuffers  - specifies whether render targets should be adapted to new size
+          
   Returns:
           nothing
 "
-  (x int) (y int) (width int) (heigth int))
+  (x int) (y int) (width int) (heigth int) (resize-buffers boolean))
 
 
 
@@ -599,6 +588,20 @@ Returns:
 "
   (camera-node node-handle))
 
+
+;; DLL bool finalizeFrame();
+(defh3fun ("finalizeFrame" finalize-frame) boolean
+  "Marker for end of frame.
+		
+This function tells the engine that the current frame is finished and that all
+subsequent rendering operations will be for the next frame.
+		
+Parameters:
+        none
+			
+Returns:
+        true in case of success, otherwise false
+")
 
 ;; void clear();
 (defh3fun ("clear" clear) void
@@ -689,41 +692,41 @@ Returns:
 
 
 ;; void showOverlay( float x_ll, float y_ll, float u_ll, float v_ll,
-;;                                                float x_lr, float y_lr, float u_lr, float v_lr,
-;;                                                float x_ur, float y_ur, float u_ur, float v_ur,
-;;                                                float x_ul, float y_ul, float u_ul, float v_ul,
-;;                                                int layer, ResHandle materialRes );
+;;                   float x_lr, float y_lr, float u_lr, float v_lr,
+;;                   float x_ur, float y_ur, float u_ur, float v_ur,
+;;                   float x_ul, float y_ul, float u_ul, float v_ul,
+;;                   ResHandle materialRes, int layer);
 (defh3fun ("showOverlay" show-overlay) void
   "Shows an overlay on the screen.
-
-This function displays an overlay with a specified material at a specified
-position on the screen.  n overlay is a 2D image that can be used to render 2D
-GUI elements. The coordinate system sed has its origin (0, 0) at the lower left
-corner of the screen and its maximum (1, 1) at he upper right corner. Texture
-coordinates are using the same system, where the coordinates 0, 0) correspond to
-the lower left corner of the image.  verlays can have different layers which
-describe the order in which they are drawn. Overlays with maller layer numbers
-are drawn before overlays with higher layer numbers.  ote that the overlays have
-to be removed manually using the function clearOverlays.
+		
+This function displays an overlay with a specified material at a specified position on the screen.
+An overlay is a 2D image that can be used to render 2D GUI elements. The coordinate system
+used has its origin (0, 0) at the top-left corner of the screen and its maximum (1, 1) at
+the bottom-right corner. Texture coordinates are using a system where the coordinates (0, 0)
+correspond to the lower left corner of the image.
+Overlays can have different layers which describe the order in which they are drawn. Overlays with
+smaller layer numbers are drawn before overlays with higher layer numbers.
+Note that the overlays have to be removed manually using the function clearOverlays.
 
 Parameters:
-        x_ll, y_ll, u_ll, v_ll  - position and texture coordinates of the lower left corner
-        x_lr, y_lr, u_lr, v_lr  - position and texture coordinates of the lower right corner
-        x_ur, y_ur, u_ur, v_ur  - position and texture coordinates of the upper right corner
-        x_ul, y_ul, u_ul, v_ul  - position and texture coordinates of the upper left corner
-        layer                                   - layer index of the overlay (Values: from 0 to 7)
-        materialRes                             - material resource used for rendering
-
+        x_tl, y_tl, u_tl, v_tl  - position and texture coordinates of the top-left corner
+        x_bl, y_bl, u_bl, v_bl  - position and texture coordinates of the bottom-left corner
+        x_br, y_br, u_br, v_br  - position and texture coordinates of the bottom-right corner
+        x_tr, y_tr, u_tr, v_tr  - position and texture coordinates of the top-right corner
+        colR, colG, colB, colA  - color of the overlay that is set for the material's shader
+        materialRes             - material resource used for rendering
+        layer                   - layer index of the overlay (Values: from 0 to 7)
+	
 Returns:
-        nothing
+	nothing
 "
-  (x-ll float) (y-ll float) (u-ll float)
-  (v-ll float) (x-lr float) (y-lr float)
-  (u-lr float) (v-lr float) (x-ur float)
-  (y-ur float) (u-ur float) (v-ur float)
-  (x-ul float) (y-ul float) (u-ul float)
-  (v-ul float) (layer int)
-  (material-res resource-handle))
+  (x-tl float) (y-tl float) (u-tl float) (v-tl float)
+  (x-bl float) (y-bl float) (u-bl float) (v-bl float)
+  (x-br float) (y-br float) (u-br float) (v-br float)
+  (x-tr float) (y-tr float) (u-tr float) (v-tr float)
+  (col-r float) (col-g float) (col-b float) (col-a float)
+  (material-res resource-handle)
+  (layer int))
 
 
 ;; void clearOverlays();
@@ -767,7 +770,7 @@ This function returns a pointer to the name of a specified resource. If the
 resource handle is invalid, the function returns an empty string.
 
 Important Note: The pointer is const and allows only read access to the data. Do never try to modify the
-ata of the pointer since that can corrupt the engine's internal states!*
+data of the pointer since that can corrupt the engine's internal states!*
 
 Parameters:
         res     - handle to the resource
@@ -776,6 +779,26 @@ Returns:
         name of the resource or empty string in case of failure
 "
   (res resource-handle))
+
+
+;; DLL ResHandle getNextResource( int type, ResHandle start );
+(defh3fun ("getNextResource" get-next-resource) resource-handle
+  "Returns the next resource of the specified type.
+		
+This function searches the next resource of the specified type and returns its handle.
+The search begins after the specified start handle. If a further resource of the queried type
+does not exist, a zero handle is returned. The function can be used to iterate over all
+resources of a given type by using as start the return value of the previous iteration step.
+The first iteration step should start at 0 and iteration can be ended when the function returns 0.
+		
+Parameters:
+        type   - type of resource to be searched (ResourceTypes::Undefined for all types)
+        start  - resource handle after which the search begins (can be 0 for beginning of resource list)
+			
+Returns:
+        handle to the found resource or 0 if it does not exist
+"
+  (type resource-type) (start resource-handle))
 
 
 ;; ResHandle findResource( int type, const char *name );
@@ -1182,6 +1205,23 @@ Returns:
         true in case of success, otherwise false
 "
   (material-res resource-handle) (name string) (a float) (b float) (c float) (d float))
+
+
+;; DLL bool setMaterialSampler( ResHandle materialRes, const char *name, ResHandle texRes );
+(defh3fun ("setMaterialSampler" set-material-sampler) boolean
+  "Binds a texture to a sampler of a Material resource.
+
+This function binds a texture resource to the specified sampler of the specified material.
+		
+Parameters:
+        materialRes  - handle to the Material resource to be accessed
+        name         - name of the sampler
+        texRes       - handle to texture resource
+			
+Returns:
+        true in case of success, otherwise false
+"
+  (material-res resource-handle) (name string) (tex-resource resource-handle))
 
 
 ;; bool setPipelineStageActivation( ResHandle pipelineRes, const char *stageName, bool enabled );
@@ -1692,6 +1732,29 @@ Returns:
   (intersection (:pointer float)))
 
 
+;; DLL int checkNodeVisibility( NodeHandle node, NodeHandle cameraNode, bool checkOcclusion, bool calcLod );
+
+(defh3fun ("checkNodeVisibility" check-node-visibility) int
+ "Checks if a node is visible.
+
+This function checks if a specified node is visible from the perspective of a specified
+camera. The function always checks if the node is in the camera's frustum. If checkOcclusion
+is true, the function will take into account the occlusion culling information from the previous
+frame (if occlusion culling is disabled the flag is ignored). The flag calcLod determines whether the
+detail level for the node should be returned in case it is visible. The function returns -1 if the node
+is not visible, otherwise 0 (base LOD level) or the computed LOD level.
+
+Parameters:
+        node             - node to be checked for visibility
+        camera-node      - camera node from which the visibility test is done
+        check-occlusion  - specifies if occlusion info from previous frame should be taken into account
+        calc-lod         - specifies if LOD level should be computed
+
+Returns:
+        computed LOD level or -1 if node is not visible
+"
+ (node node-handle) (camera-node node-handle) (check-occlusion boolean) (calc-lod boolean))
+
 ;;;; Group: Group-specific scene graph functions 
 
 
@@ -1730,8 +1793,7 @@ Parameters:
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name string)
-  (geometry-res resource-handle))
+  (parent node-handle) (name string) (geometry-res resource-handle))
 
 
 ;; bool setupModelAnimStage( NodeHandle modelNode, int stage, ResHandle animationRes, const char *startNode, bool additive );
@@ -1957,7 +2019,7 @@ Returns:
 
 
 ;; bool calcCameraProjectionMatrix( NodeHandle cameraNode, float *projMat );
-(defh3fun ("calcCameraProjectionMatrix" calc-camera-projection-matrix) boolean
+(defh3fun ("getCameraProjectionMatrix" get-camera-projection-matrix) boolean
   "Calculates the camera projection matrix.
 
 This function calculates the camera projection matrix used for bringing the
@@ -2046,6 +2108,20 @@ Returns:
   `(progn
      (declaim (inline ,lname))
      (defcfun (,cname ,lname :library horde3d-utils) ,result-type ,@body)))
+
+;; DLL void freeMem( char **ptr );
+(defh3ufun ("freeMem" free-mem) void
+  "Frees memory allocated by the Utility Library.
+		
+This utility function frees the memory that was allocated by another function of the Utility Library.
+		
+Parameters:
+  ptr  - address of a pointer that references to memory allocated by the Utility Library
+			
+Returns:
+  nothing
+"
+  (ptr :pointer))
 
 ;; bool dumpMessages();
 (defh3ufun ("dumpMessages" dump-messages) boolean
@@ -2241,7 +2317,10 @@ Returns:
 
 ;;;; Group: Overlays
 
-;; void showText( const char *text, float x, float y, float size, int layer, ResHandle fontMaterialRes );
+;; DLL void showText( const char *text, float x, float y, float size,
+;;                    float colR, float colG, float colB,
+;;                    ResHandle fontMaterialRes, int layer );
+
 (defh3ufun ("showText" show-text) void
   "Shows text on the screen using a font texture.
 
@@ -2250,21 +2329,23 @@ The font texture of the specified font material has to be a regular 16x16 grid c
 ASCII characters in row-major order. The layer corresponds to the layer parameter of overlays.
 
 Parameters:
-        text            - text string to be displayed
-        x, y            - position of the lower left corner of the first character;
-                                          for more details on coordinate system see overlay documentation
-        size            - size (scale) factor of the font
-        layer           - layer index of the font overlays
-        fontMaterialRes - font material resource used for rendering
+        text                - text string to be displayed
+        x, y                - position of the lower left corner of the first character;
+                              for more details on coordinate system see overlay documentation
+        size                - size (scale) factor of the font
+        col-r, col-g, col-b - font color
+        font-material-res   - font material resource used for rendering
+        layer               - layer index of the font overlays
 
 Returns:
         nothing
 "
   (text string) (x float) (y float) (size float)
-  (layer int) (font-material-res resource-handle))
+  (col-r float) (col-g float) (col-b float)
+  (font-material-res resource-handle) (layer int))
 
 
-;; void showFrameStats( ResHandle fontMaterialRes, float curFPS );
+;; void showFrameStats( ResHandle fontMaterialRes, ResHandle panelMaterialRes, int mode );
 (defh3ufun ("showFrameStats" show-frame-stats) void
   "Shows frame statistics on the screen.
 
@@ -2273,14 +2354,16 @@ the screen. Since the statistic counters are reset after the call, it should be 
 once per frame to obtain correct values.
 
 Parameters:
-        fontMaterialRes - font material resource used for drawing text
-        curFPS          - frames per second with which application is currently running
+        font-material-res  - font material resource used for drawing text
+        panel-material-res - material resource used for drawing info box
+        mode               - display mode, specifying which data is shown (<= MaxStatMode)
 
 Returns:
         nothing
 "
   (font-material-res resource-handle)
-  (cur-fps float))
+  (panel-material-res resource-handle)
+  (mode int))
 
 ;;;; Group: Terrain Extension
 

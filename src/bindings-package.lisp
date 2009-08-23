@@ -16,17 +16,25 @@
            #:check-extension
            #:init
            #:release
-           #:resize
+           #:setup-viewport
            #:render
+           #:finalize-frame
            #:clear
+
+           ;; General functions
            #:get-message
            #:get-option
            #:set-option
            #:get-stat
+
+           ;; Overlays
            #:show-overlay
            #:clear-overlays
+
+           ;; Resource management
            #:get-resource-type
            #:get-resource-name
+           #:get-next-resource
            #:find-resource
            #:add-resource
            #:clone-resource
@@ -47,8 +55,11 @@
            #:create-texture-2d
            #:set-shader-preambles
            #:set-material-uniform
+           #:set-material-sampler 
            #:set-pipeline-stage-activation
            #:get-pipeline-render-target-data
+
+           ;;  General scene graph functions
            #:get-node-type
            #:get-node-parent
            #:set-node-parent
@@ -72,7 +83,12 @@
            #:get-node-find-result
            #:cast-ray
            #:get-cast-ray-result
+           #:check-node-visibility
+           
+           ;; Group-specific scene graph functions
            #:add-group-node
+
+           ;; Model-specific scene graph functions
            #:add-model-node
            #:setup-model-anim-stage
            #:set-model-anim-params
@@ -83,10 +99,14 @@
            #:set-light-contexts
            #:add-camera-node
            #:setup-camera-view
-           #:calc-camera-projection-matrix
+           #:get-camera-projection-matrix
            #:add-emitter-node
            #:advance-emitter-time
            #:has-emitter-finished
+
+           ;; Horde utils
+
+           #:free-mem
            #:dump-messages
            #:init-open-gl
            #:release-open-gl
@@ -99,6 +119,8 @@
            #:pick-node
            #:show-text
            #:show-frame-stats
+
+           ;; Terrain
            #:add-terrain-node
            #:create-geometry-resource))
 
