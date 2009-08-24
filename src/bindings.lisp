@@ -158,19 +158,15 @@
   :texture
   :particle-effect
   :pipeline
-  (:sound 200)
-  )
+  (:sound 200))
 
 
 (defbitfield resource-flags
   "Enum: resource-flags - The available flags used when adding a resource.
 
-   NoQuery                 - Excludes resource from being listed by queryUnloadedResource function.
-   NoTexPOTConversion      - Disables texture conversion to power-of-two dimensions on hardware without NPOT-support.
-   NoTexCompression        - Disables texture compression for Texture2D or TextureCube resource.
-   NoTexMipmaps            - Disables generation of mipmaps for textures.
-   NoTexFiltering          - Disables bilinear filtering for textures.
-   NoTexRepeat             - Disables tiling (repeat mode) for textures and enables clamping instead.
+   :no-query            - Excludes resource from being listed by queryUnloadedResource function.
+   :no-tex-compression  - Disables texture compression for Texture2D or TextureCube resource.
+   :no-tex-mipmaps      - Disables generation of mipmaps for textures.
 "
   (:no-query #x0001)
   (:no-tex-compression #x0002)
@@ -697,7 +693,7 @@ Returns:
   (camera-node node-handle))
 
 
-;; DLL bool finalizeFrame();
+;; bool finalizeFrame();
 (defh3fun ("finalizeFrame" finalize-frame) boolean
   "Marker for end of frame.
                 
@@ -2349,7 +2345,8 @@ Returns:
   (content-dir string))
 
 
-;; bool createTGAImage( const unsigned char *pixels, int width, int height, int bpp, char **outData, int *outSize );
+;; bool createTGAImage( const unsigned char *pixels, int width, int height, int bpp,
+;;                      char **outData, int *outSize );
 (defh3ufun ("createTGAImage" create-tga-image) boolean
   "Creates a TGA image in memory.
 
@@ -2381,7 +2378,8 @@ Returns:
 
 ;;;; Group: Scene graph
 
-;; void pickRay(NodeHandle cameraNode, float nwx, float nwy, float *ox, float *oy, float *oz, float *dx, float *dy, float *dz );
+;; void pickRay( NodeHandle cameraNode, float nwx, float nwy,
+;;               float *ox, float *oy, float *oz, float *dx, float *dy, float *dz );
 (defh3ufun ("pickRay" pick-ray) void
   "*      Calculates the ray originating at the specified camera and window coordinates
 
@@ -2405,7 +2403,7 @@ Returns:
   (dx (:pointer float)) (dy (:pointer float)) (dz (:pointer float)))
 
 
-;; NodeHandle pickNode(NodeHandle cameraNode, float nwx, float nwy );
+;; NodeHandle pickNode( NodeHandle cameraNode, float nwx, float nwy );
 (defh3ufun ("pickNode" pick-node) node-handle
   "Returns the scene node which is at the specified window coordinates.
 
@@ -2602,7 +2600,7 @@ Returns:
 ;;;; Group: Listener-specific scene graph functions 
 
 
-;;;     DLL NodeHandle addListenerNode( NodeHandle parent, const char *name );
+;;; NodeHandle addListenerNode( NodeHandle parent, const char *name );
 (defh3fun ("addListenerNode" add-listener-node) node-handle
   "Adds a Listener node to the scene.
 
@@ -2618,7 +2616,7 @@ Returns:
   (parent node-handle) (name string))
 
 
-;;;     DLL NodeHandle getActiveListener();
+;;; NodeHandle getActiveListener();
 (defh3fun ("getActiveListener" get-active-listener) node-handle
   "Returns the handle of the active Listener node.
 
@@ -2632,7 +2630,7 @@ Returns:
 ")
 
 
-;;;     DLL bool setActiveListener( NodeHandle listenerNode );
+;;; bool setActiveListener( NodeHandle listenerNode );
 (defh3fun ("setActiveListener" set-active-listener) boolean
   "Sets the active Listener node.
 
@@ -2650,7 +2648,7 @@ Returns:
 
 ;;;; Group: Sound-specific scene graph functions 
 
-;;; DLL NodeHandle addSoundNode( NodeHandle parent, const char *name, ResHandle soundRes );
+;;; NodeHandle addSoundNode( NodeHandle parent, const char *name, ResHandle soundRes );
 (defh3fun ("addSoundNode" add-sound-node) node-handle
   "Adds a Sound node to the scene.
 
@@ -2667,7 +2665,7 @@ Returns:
   (parent node-handle) (name string) (sound-resource resource-handle))
 
 
-;;; DLL bool isSoundPlaying( NodeHandle soundNode );
+;;; bool isSoundPlaying( NodeHandle soundNode );
 (defh3fun ("isSoundPlaying" sound-playing-p) boolean
   "Checks if an Sound node is playing.
 
@@ -2682,7 +2680,7 @@ Returns:
   (sound-node node-handle))
 
 
-;;; DLL void playSound( NodeHandle soundNode );
+;;; void playSound( NodeHandle soundNode );
 (defh3fun ("playSound" play-sound) void
   "Starts the audio playback of a Sound node.
 
@@ -2697,7 +2695,7 @@ Returns:
   (sound-node node-handle))
 
 
-;;; DLL void pauseSound( NodeHandle soundNode );
+;;; void pauseSound( NodeHandle soundNode );
 (defh3fun ("pauseSound" pause-sound) void
   "Pauses the playback of a Sound node.
 
@@ -2712,7 +2710,7 @@ Returns:
   (sound-node node-handle))
 
 
-;;; DLL void rewindSound( NodeHandle soundNode );
+;;; void rewindSound( NodeHandle soundNode );
 (defh3fun ("rewindSound" rewind-sound) void
   "Rewinds the playback of a Sound node.
 
