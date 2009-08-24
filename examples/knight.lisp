@@ -37,10 +37,6 @@
         (knight-anim-res-2 (h3d:add-resource :animation "animations/knight_attack.anim" 0))
         (particle-sys-res (h3d:add-resource :scene-graph "particles/particleSys1/particleSys1.scene.xml" 0)))
 
-    (setf (font-resource app) (h3d:add-resource :material "overlays/font.material.xml" 0)
-          (panel-resource app) (h3d:add-resource :material "overlays/panel.material.xml" 0)
-          (logo-resource app) (h3d:add-resource :material "overlays/logo.material.xml" 0))
-
     ;; Load resources
     (h3d:load-resources-from-disk (namestring (content-path app)))
 
@@ -89,12 +85,7 @@
 
 
 (defmethod app-main-loop ((app knight-application) fps)
-  (assert (not (zerop fps)))
-  (setf (curr-fps app) (coerce fps 'single-float))
   
-  (h3d:set-option :debug-view-mode (if (show-debug-view? app) 1 0))
-  (h3d:set-option :wireframe-mode (if (show-wire-frame? app) 1 0))
-
   (unless (freeze? app)
     (incf (anim-time app) (/ 1.0 fps))
     (h3d:set-model-anim-params (knight-node app) 0
@@ -133,16 +124,7 @@
                       1 1 1 1 (logo-resource app) 7)
     
     ;; Render scene
-    (h3d:render cam))
-
-  ;; Mark end of frame
-  (h3d:finalize-frame)
-
-  ;; Remove all overlays
-  (h3d:clear-overlays)
-
-  ;; Write all mesages to log file
-  (h3d:dump-messages))
+    (h3d:render cam)))
 
 
 ;;; knight.lisp ends here
