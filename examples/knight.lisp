@@ -25,6 +25,8 @@
                   :stat-mode 2
                   :anim-weight 0.0
                   :content-path #p"/home/ole/src/graphics/Horde3D/Horde3D/Binaries/Content/")
+   :width 1280
+   :height 800
    :caption "Knight - Horde3D Sample"))
 
 
@@ -84,21 +86,30 @@
                          0.1 1000.0))
 
 
-(defmethod app-main-loop ((app knight-application) fps)
+(defmethod app-main-loop ((app knight-application))
+  (when (gethash :sdl-key-1 (keys app))
+    (incf (anim-weight app) (/ 2 (curr-fps app)))
+    (when (> (anim-weight app) 1.0)
+      (setf (anim-weight app) 1.0)))
+
+  (when (gethash :sdl-key-2 (keys app))
+    (decf (anim-weight app) (/ 2 (curr-fps app)))
+    (when (< (anim-weight app) 0.0)
+      (setf (anim-weight app) 0.0)))
   
   (unless (freeze? app)
-    (incf (anim-time app) (/ 1.0 fps))
-    (h3d:set-model-anim-params (knight-node app) 0
-                               (* 24.0 (anim-time app))
-                               (anim-weight app))
-    (h3d:set-model-anim-params (knight-node app) 1
-                               (* 24.0 (anim-time app))
-                               (- 1.0 (anim-weight app)))
+    (let ((inv-fps (/ 1.0 (curr-fps app))))
+      (incf (anim-time app) inv-fps)
+      (h3d:set-model-anim-params (knight-node app) 0
+                                 (* 24.0 (anim-time app))
+                                 (anim-weight app))
+      (h3d:set-model-anim-params (knight-node app) 1
+                                 (* 24.0 (anim-time app))
+                                 (- 1.0 (anim-weight app)))
 
-    ;; candidate for a donodes macro
-    (dotimes (i (h3d:find-nodes (particle-sys-node app) "" :emitter))
-      (h3d:advance-emitter-time (h3d:get-node-find-result i)
-                                (/ 1 (curr-fps app)))))
+      ;; candidate for a donodes macro
+      (dotimes (i (h3d:find-nodes (particle-sys-node app) "" :emitter))
+        (h3d:advance-emitter-time (h3d:get-node-find-result i) inv-fps))))
   
   ;; Set camera parameters
   

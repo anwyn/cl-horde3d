@@ -13,34 +13,36 @@
 (in-package :horde3d-examples)
 
 (defclass example-application ()
-  ((viewer-position    :accessor viewer-position    :initarg :viewer-position    :initform (make-array 3 :initial-element 0.0))
-   (viewer-orientation :accessor viewer-orientation :initarg :viewer-orientation :initform (make-array 2 :initial-element 0.0))
-   (velocity           :accessor velocity           :initarg :velocity           :initform 10.0)
-   (keys               :accessor keys               :initarg :keys)
+  ((viewer-position    :accessor viewer-position    :initarg  :viewer-position    :initform (make-array 3 :initial-element 0.0))
+   (viewer-orientation :accessor viewer-orientation :initarg  :viewer-orientation :initform (make-array 2 :initial-element 0.0))
+   (velocity           :accessor velocity           :initform 10.0)
+   (keys               :accessor keys               :initform (make-hash-table))
+   (modifiers          :accessor modifiers          :initform nil)
 
-   (fullscreen         :accessor fullscreen?        :initarg :fullscreen         :initform nil)
-   (width              :accessor width              :initarg :width)
-   (height             :accessor height             :initarg :height)
+   (fullscreen         :accessor fullscreen?        :initarg  :fullscreen         :initform nil)
+   (width              :accessor width              :initarg  :width)
+   (height             :accessor height             :initarg  :height)
    
-   (hdr-pipeline       :accessor hdr-pipeline       :initarg :hdr-pipeline)
-   (fwd-pipeline       :accessor fwd-pipeline       :initarg :fwd-pipeline)
+   (hdr-pipeline       :accessor hdr-pipeline       :initarg  :hdr-pipeline)
+   (fwd-pipeline       :accessor fwd-pipeline       :initarg  :fwd-pipeline)
    
-   (camera-node        :accessor camera-node        :initarg :camera-node)
+   (camera-node        :accessor camera-node        :initarg  :camera-node)
 
+   (anim-time          :accessor anim-time          :initarg  :anim-time          :initform 0.0)
+   (anim-weight        :accessor anim-weight        :initarg  :anim-weight        :initform 1.0)
+   (curr-fps           :accessor curr-fps           :initarg  :curr-fps           :initform 30.0)
 
-   (anim-time          :accessor anim-time          :initarg :anim-time          :initform 0.0)
-   (anim-weight        :accessor anim-weight        :initarg :anim-weight        :initform 1.0)
-   (curr-fps           :accessor curr-fps           :initarg :curr-fps           :initform 30.0)
-
-   (logo-resource      :accessor logo-resource      :initarg :logo-resource)
-   (font-resource      :accessor font-resource      :initarg :font-resource)
-   (panel-resource     :accessor panel-resource     :initarg :panel-resource)
+   (logo-resource      :accessor logo-resource      :initarg  :logo-resource)
+   (font-resource      :accessor font-resource      :initarg  :font-resource)
+   (panel-resource     :accessor panel-resource     :initarg  :panel-resource)
    
-   (content-path       :accessor content-path       :initarg :content-path)
-   (debug-view         :accessor show-debug-view?   :initarg :show-debug-view    :initform nil)
-   (wire-frame         :accessor show-wire-frame?   :initarg :show-wire-frame    :initform nil)
-   (freeze             :accessor freeze?            :initarg :freeze             :initform nil)
-   (stat-mode          :accessor stat-mode          :initarg :stat-mode          :initform 0)))
+   (content-path       :accessor content-path       :initarg  :content-path)
+   (debug-view         :accessor show-debug-view?   :initarg  :show-debug-view    :initform nil)
+   (wire-frame         :accessor show-wire-frame?   :initarg  :show-wire-frame    :initform nil)
+   (freeze             :accessor freeze?            :initarg  :freeze             :initform nil)
+   (stat-mode          :accessor stat-mode          :initarg  :stat-mode          :initform 0))
+  (:documentation "Base class for Horde3D Examples. Inits/releases Horde and handles basic
+                   keys and mouse movement."))
 
 (defgeneric app-init (app)
   (:method :before ((app example-application))
@@ -106,30 +108,6 @@
   (:method ((app example-application) key)
     (declare (ignore app key))))
 
-(defgeneric app-key-handler (app)
-  (:method ((app example-application))
-    (declare (ignore app))))
-
-
-(defgeneric app-main-loop (app fps)
-  (:method :before ((app example-application) fps)
-           (assert (not (zerop fps)))
-           (setf (curr-fps app) (coerce fps 'single-float))
-           
-           (h3d:set-option :debug-view-mode (if (show-debug-view? app) 1 0))
-           (h3d:set-option :wireframe-mode (if (show-wire-frame? app) 1 0))
-           (app-key-handler app))
-
-  (:method :after ((app example-application) fps)
-           (h3d:finalize-frame)
-           (h3d:clear-overlays)
-           (h3d:dump-messages)))
-
-(defgeneric app-key-state-change (app key pressed?))
-
-(defgeneric app-mouse-button-event (app x y button))
-
-
 (defgeneric app-mouse-move-event (app x y)
   (:method ((app example-application) x y)
     (declare (ignore app x y)))
@@ -140,8 +118,63 @@
            (incf (aref (viewer-orientation app) 0)
                    (coerce (max -90 (min 90 (* 30 (/ y 100)))) 'single-float))))
 
+(declaim (inline degtorad))
+(defun degtorad (angle)
+  (declare (type single-float angle))
+  (the single-float (* angle (/ pi 180.0))))
+
+(defun handle-movement (app)
+  (let ((curr-vel (/ (velocity app) (curr-fps app))))
+    (declare (type single-float curr-vel))
+    (with-accessors ((mods modifiers)
+                     (keys keys)
+                     (pos viewer-position)
+                     (rot viewer-orientation)) app
+
+      (when (member :sdl-key-mod-lshift mods)
+        (setf curr-vel (* 5 curr-vel)))
+
+      (let ((w (gethash :sdl-key-w keys))
+            (s (gethash :sdl-key-s keys)))
+        (when (or w s)
+          (let ((rx (degtorad (aref rot 0)))
+                (ry (degtorad (aref rot 1))))
+            (when w
+              (decf (aref pos 0) (coerce (* curr-vel (sin ry) (cos (- rx))) 'single-float))
+              (decf (aref pos 1) (coerce (* curr-vel (sin (- rx))) 'single-float))
+              (decf (aref pos 2) (coerce (* curr-vel (cos ry) (cos (- rx))) 'single-float)))
+            (when s
+              (incf (aref pos 0) (coerce (* curr-vel (sin ry) (cos (- rx))) 'single-float))
+              (incf (aref pos 1) (coerce (* curr-vel (sin (- rx))) 'single-float))
+              (incf (aref pos 2) (coerce (* curr-vel (cos ry) (cos (- rx))) 'single-float))))))
+
+      (let ((a (gethash :sdl-key-a keys))
+            (d (gethash :sdl-key-d keys)))
+        (when (or a d)
+          (let ((ry-90 (degtorad (- (aref rot 1) 90.0f0)))
+                (ry+90 (degtorad (+ (aref rot 1) 90.0f0))))
+            (when a
+              (incf (aref pos 0) (coerce (* curr-vel (sin ry-90)) 'single-float))
+              (incf (aref pos 2) (coerce (* curr-vel (cos ry-90)) 'single-float)))
+            (when (gethash :sdl-key-d keys)
+              (incf (aref pos 0) (coerce (* curr-vel (sin ry+90)) 'single-float))
+              (incf (aref pos 2) (coerce (* curr-vel (cos ry+90)) 'single-float)))))))))
+
+
+(defgeneric app-main-loop (app)
+  (:method :before ((app example-application))
+           (h3d:set-option :debug-view-mode (if (show-debug-view? app) 1 0))
+           (h3d:set-option :wireframe-mode (if (show-wire-frame? app) 1 0))
+           (handle-movement app))
+
+  (:method :after ((app example-application))
+           (h3d:finalize-frame)
+           (h3d:clear-overlays)
+           (h3d:dump-messages)))
+
 
 (defgeneric toggle-fullscreen (app)
+  (:documentation "Switch from windowed mode to fullscreen an vice versa.")
   (:method ((app example-application))
     (let ((width (width app))
           (height (height app)))
@@ -155,6 +188,8 @@
     
 
 (defun example-main-sdl (app &key (width 800) (height 600) (caption "Horde3D example"))
+  "Main example function. This function contains the game loop. Call it with an 
+instance of a class derived from example-application."
   (sdl:with-init ()
     (sdl:window width height
                 :bpp 32
@@ -188,10 +223,16 @@
                              (setf mx x my y))
 
         ;; Key pressed
-        (:key-down-event (:key key) (app-key-press-event app key))
+        (:key-down-event (:key key :mod-key mod)
+                         (setf (modifiers app) mod)
+                         (setf (gethash key (keys app)) t)
+                         (app-key-press-event app key))
 
         ;; Key released
-        (:key-up-event (:key key) (app-key-release-event app key))
+        (:key-up-event (:key key :mod-key mod)
+                       (setf (modifiers app) mod)
+                       (setf (gethash key (keys app)) nil)
+                       (app-key-release-event app key))
 
         ;; Redraw display
 	(:video-expose-event () (sdl:update-display))
@@ -201,7 +242,9 @@
                (when (>= (incf frames) 3)
                  (setf fps (max 100.0 (sdl:average-fps)))
                  (setf frames 0))
-               (app-main-loop app fps)
+               (assert (not (zerop fps)))
+               (setf (curr-fps app) (coerce fps 'single-float))
+               (app-main-loop app)
                (sdl:update-display))))))
 
 
