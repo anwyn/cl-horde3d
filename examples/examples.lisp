@@ -272,7 +272,7 @@ instance of a class derived from example-application."
             (setf fps (/ frames dt))
             (setf frames 0.0)
             (setf t0 time))))
-      (app-main-loop app fps))))
+      (app-main-loop app))))
 
 
 ;;; examples.lisp ends here
