@@ -2509,13 +2509,15 @@ Returns:
 "
   (node node-handle) (res-name string) (mesh-quality float))
 
-
+#+nil
+(progn
+  
 ;;;; Group: Sound Extension
 
 ;;; Basic functions 
 
-(defh3fun ("openDevice" open-device) boolean
-  "Opens a sound device for playback.
+  (defh3fun ("openDevice" open-device) boolean
+    "Opens a sound device for playback.
 
 This function opens and initializes a sound device for playback. This needs to be called before
 any sound resources or nodes can be created or used. It will fail if another device is already
@@ -2527,11 +2529,11 @@ Parameters:
 Returns:
         true in case of success, otherwise false
 "
-  (device string))
+    (device string))
 
 
-(defh3fun ("closeDevice" close-device) void
-  "Closes the currently open sound device.
+  (defh3fun ("closeDevice" close-device) void
+    "Closes the currently open sound device.
 
 This function closes the currently open sound device.
 
@@ -2543,8 +2545,8 @@ Returns:
 ")
 
 
-(defh3fun ("getOpenDevice" get-open-device) string
-  "Gets the name of the currently open sound device.
+  (defh3fun ("getOpenDevice" get-open-device) string
+    "Gets the name of the currently open sound device.
 
 This function returns the name of the currently open sound device.
 
@@ -2556,8 +2558,8 @@ Returns:
 ")
 
 
-(defh3fun ("queryDevice" query-device) string
-  "Returns the name of a sound device.
+  (defh3fun ("queryDevice" query-device) string
+    "Returns the name of a sound device.
 
 This function returns the name of a sound device from an internal list. If the index specified
 is greater than the number of the available sound devices, NULL is returned.
@@ -2568,11 +2570,11 @@ Parameters:
 Returns:
         name of a sound device or NULL
 "
-          (index int))
+    (index int))
 
 
-(defh3fun ("getDistanceModel" get-distance-model) distance-model
-  "Gets the active distance model.
+  (defh3fun ("getDistanceModel" get-distance-model) distance-model
+    "Gets the active distance model.
 
 This function return the distance model used for calculating distance based attenuation.
 
@@ -2584,8 +2586,8 @@ Returns:
 ")
 
 
-(defh3fun ("setDistanceModel" set-distance-model) boolean
-  "Sets the active distance model.
+  (defh3fun ("setDistanceModel" set-distance-model) boolean
+    "Sets the active distance model.
 
 This function sets the distance model used for calculating distance based attenuation.
 
@@ -2595,14 +2597,14 @@ Parameters:
 Returns:
         true if the distance model could be set, otherwise false
 "
-  (model distance-model))
+    (model distance-model))
 
 ;;;; Group: Listener-specific scene graph functions 
 
 
 ;;; NodeHandle addListenerNode( NodeHandle parent, const char *name );
-(defh3fun ("addListenerNode" add-listener-node) node-handle
-  "Adds a Listener node to the scene.
+  (defh3fun ("addListenerNode" add-listener-node) node-handle
+    "Adds a Listener node to the scene.
 
 This function creates a new Listener node and attaches it to the specified parent node.
 
@@ -2613,12 +2615,12 @@ Parameters:
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name string))
+    (parent node-handle) (name string))
 
 
 ;;; NodeHandle getActiveListener();
-(defh3fun ("getActiveListener" get-active-listener) node-handle
-  "Returns the handle of the active Listener node.
+  (defh3fun ("getActiveListener" get-active-listener) node-handle
+    "Returns the handle of the active Listener node.
 
 This function returns the handle of the currently active Listener node.
 
@@ -2631,8 +2633,8 @@ Returns:
 
 
 ;;; bool setActiveListener( NodeHandle listenerNode );
-(defh3fun ("setActiveListener" set-active-listener) boolean
-  "Sets the active Listener node.
+  (defh3fun ("setActiveListener" set-active-listener) boolean
+    "Sets the active Listener node.
 
 This function sets the currently active Listener node. This node will act as the
 ears and all 3D sound calculations will be based on this node's position and orientation.
@@ -2643,14 +2645,14 @@ Parameters:
 Returns:
         true in case of success, otherwise false
 "
-  (listener-node node-handle))
+    (listener-node node-handle))
 
 
 ;;;; Group: Sound-specific scene graph functions 
 
 ;;; NodeHandle addSoundNode( NodeHandle parent, const char *name, ResHandle soundRes );
-(defh3fun ("addSoundNode" add-sound-node) node-handle
-  "Adds a Sound node to the scene.
+  (defh3fun ("addSoundNode" add-sound-node) node-handle
+    "Adds a Sound node to the scene.
 
 This function creates a new Sound node and attaches it to the specified parent node.
 
@@ -2662,12 +2664,12 @@ Parameters:
 Returns:
         handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name string) (sound-resource resource-handle))
+    (parent node-handle) (name string) (sound-resource resource-handle))
 
 
 ;;; bool isSoundPlaying( NodeHandle soundNode );
-(defh3fun ("isSoundPlaying" sound-playing-p) boolean
-  "Checks if an Sound node is playing.
+  (defh3fun ("isSoundPlaying" sound-playing-p) boolean
+    "Checks if an Sound node is playing.
 
 This function returns whether the Sound node is currently playing or not.
 
@@ -2677,12 +2679,12 @@ Parameters:
 Returns:
         true if the Sound node is currently playing, otherwise false
 "
-  (sound-node node-handle))
+    (sound-node node-handle))
 
 
 ;;; void playSound( NodeHandle soundNode );
-(defh3fun ("playSound" play-sound) void
-  "Starts the audio playback of a Sound node.
+  (defh3fun ("playSound" play-sound) void
+    "Starts the audio playback of a Sound node.
 
 This function will start the audio playback of a Sound node.
 
@@ -2692,12 +2694,12 @@ Parameters:
 Returns:
         nothing
 "
-  (sound-node node-handle))
+    (sound-node node-handle))
 
 
 ;;; void pauseSound( NodeHandle soundNode );
-(defh3fun ("pauseSound" pause-sound) void
-  "Pauses the playback of a Sound node.
+  (defh3fun ("pauseSound" pause-sound) void
+    "Pauses the playback of a Sound node.
 
 This function will pause the playback of a Sound node.
 
@@ -2707,12 +2709,12 @@ Parameters:
 Returns:
         nothing
 "
-  (sound-node node-handle))
+    (sound-node node-handle))
 
 
 ;;; void rewindSound( NodeHandle soundNode );
-(defh3fun ("rewindSound" rewind-sound) void
-  "Rewinds the playback of a Sound node.
+  (defh3fun ("rewindSound" rewind-sound) void
+    "Rewinds the playback of a Sound node.
 
 This function will rewind the playback of a Sound node. If the Sound node is
 playing while being rewinded it will continue to play from it's rewinded position.
@@ -2723,6 +2725,7 @@ Parameters:
 Returns:
         nothing
 "
-  (sound-node node-handle))
+    (sound-node node-handle))
 
 ;;; bindings.lisp ends here
+)
