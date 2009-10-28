@@ -1,35 +1,23 @@
-;;; bindings-package.lisp --- package definition and exported symbols
+;;; packages.lisp --- package definition and exported symbols
+;;;                   _                         
+;;;  _ __   __ _  ___| | ____ _  __ _  ___  ___ 
+;;; | '_ \ / _` |/ __| |/ / _` |/ _` |/ _ \/ __|
+;;; | |_) | (_| | (__|   < (_| | (_| |  __/\__ \
+;;; | .__/ \__,_|\___|_|\_\__,_|\__, |\___||___/
+;;; |_|                         |___/           
 ;;;
 ;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
 ;;; 
 
 (in-package :cl-user)
 
-(defpackage #:horde3d-cffi
-  (:nicknames #:%h3d)
+(defpackage #:horde3d
+  (:nicknames #:h3d)
   (:use #:common-lisp #:cffi)
-  (:shadow #:float #:boolean #:string)
   (:export
-
-   ;; constants
-   #:+root-node+
-
-   ;; types
    #:resource
    #:node
-   
-   ;; enums
-   #:option
-   #:resource-type
-   #:resource-flags
-   #:resource-format
-   #:resource-parameter
-   #:resource-element
-   #:node-type
-   #:node-parameter
-   
-   
-   ;; basic functions
+   #:+root-node+
    #:get-version-string
    #:check-extension
    #:get-error
@@ -44,7 +32,7 @@
    #:get-message
    #:get-option
    #:set-option
-   #:get-statistics
+   #:get-stat
 
    ;; Overlays
    #:show-overlay
@@ -53,33 +41,22 @@
    ;; Resource management
    #:get-resource-type
    #:get-resource-name
-   #:get-next-resource
    #:find-resource
    #:add-resource
    #:clone-resource
    #:remove-resource
-   #:resource-loaded-p
+   #:is-resource-loaded
    #:load-resource
    #:unload-resource
-   #:get-resource-element-count
-   #:find-resource-element
-   
-   #:get-resource-parameter-i
-   #:set-resource-parameter-i
-   #:get-resource-parameter-f
-   #:set-resource-parameter-f
-   #:get-resource-parameter-str
-   #:set-resource-parameter-str
-   #:map-resource-stream
-   #:unmap-resource-stream
-   
+   #:resource-parameter
+
    #:query-unloaded-resource
    #:release-unused-resources
-
-   ;; Specific resource management functions
-   #:create-texture
+   #:create-texture-2d
    #:set-shader-preambles
    #:set-material-uniform
+   #:set-material-sampler 
+   #:set-pipeline-stage-activation
    #:get-pipeline-render-target-data
 
    ;;  General scene graph functions
@@ -95,12 +72,7 @@
    #:set-node-transform
    #:get-node-transform-matrices
    #:set-node-transform-matrix
-   #:get-node-parameter-i
-   #:set-node-parameter-i
-   #:get-node-parameter-f
-   #:set-node-parameter-f
-   #:get-node-parameter-str
-   #:set-node-parameter-str
+   #:node-parameter
    #:get-node-aabb
    #:find-nodes
    #:get-node-find-result
@@ -110,35 +82,22 @@
            
    ;; Group-specific scene graph functions
    #:add-group-node
-
-   ;; Model-specific scene graph functions
    #:add-model-node
    #:setup-model-animation-stage
    #:set-model-animation-parameters
    #:set-model-morpher
-
-   ;; Mesh-specific scene graph functions
    #:add-mesh-node
-
-   ;; Joint-specific scene graph functions
    #:add-joint-node
-
-   ;; Light-specific scene graph functions
    #:add-light-node
-
-   ;; Camera-specific scene graph functions
+   #:set-light-contexts
    #:add-camera-node
    #:setup-camera-view
    #:get-camera-projection-matrix
-
-   ;; Emitter-specific scene graph functions
    #:add-emitter-node
    #:advance-emitter-time
    #:has-emitter-finished
 
-   ;; Horde utils
-
-   #:free-mem
+   ;; Horde3d utilities
    #:dump-messages
    #:init-open-gl
    #:release-open-gl
@@ -150,7 +109,11 @@
    #:pick-ray
    #:pick-node
    #:show-text
-   #:show-frame-statistics))
+   #:show-frame-stats
+
+   ;; lispification
+   #:set-resource-paths
+   #:set-options))
 
 
-;;; binding-package.lisp ends here
+;;; packages.lisp ends here

@@ -9,589 +9,18 @@
 ;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
 ;;;
 
-(in-package :horde3d-cffi-binding)
-
-;;;; CFFI types
-
-(define-foreign-type ensure-integer ()
-  ()
-  (:actual-type :int)
-  (:simple-parser ensure-integer))
-
-(defmethod translate-to-foreign (value (type ensure-integer))
-  (truncate value))
-
-(defmethod expand-to-foreign (value (type ensure-integer))
-  (if (constantp value)
-      (truncate (eval value))
-      `(truncate ,value)))
-
-(define-foreign-type ensure-float ()
-  ()
-  (:actual-type :float)
-  (:simple-parser ensure-float))
-
-(defmethod translate-to-foreign (value (type ensure-float))
-  (cl:float value 1.0))
-
-(defmethod expand-to-foreign (value (type ensure-float))
-  (if (constantp value)
-      (cl:float (eval value) 1.0)
-      `(cl:float ,value 1.0)))
-
-(define-foreign-type ensure-double ()
-  ()
-  (:actual-type :double)
-  (:simple-parser ensure-double))
-
-(defmethod translate-to-foreign (value (type ensure-double))
-  (cl:float value 1.0d0))
-
-(defmethod expand-to-foreign (value (type ensure-double))
-  (if (constantp value)
-      (cl:float (eval value) 1.0d0)
-      `(cl:float ,value 1.0d0)))
-
-;;;; C types
-
-(defctype boolean (:boolean :unsigned-char))
-
-(defctype int ensure-integer)
-(defctype sizei ensure-integer)
-
-(defctype void :void)
-(defctype string :string)
-
-(defctype float ensure-float)
-(defctype double ensure-double)
-
-;;;; Group: Typedefs and constants
-
-(defctype resource-handle ensure-integer
-  "Handle to a resource (int).")
-
-(defctype node-handle ensure-integer
-  "Handle to a scene node (int).")
+(in-package :horde3d-cffi)
 
 ;;;; Constants: Predefined constants
 
 (defconstant +root-node+ 1
   "Scene root node handle.")
 
-;;;; Group: Enumerations
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: Basic functions
 
-(defcenum engine-option
-  "The available engine option parameters.
-
- :max-log-level       - Defines the maximum log level; only messages which are smaller or equal to this value
-                        (hence more important) are published in the message queue. (Default: 4)
- :max-num-messages    - Defines the maximum number of messages that can be stored in the message queue (Default: 512)
- :trilinear-filtering - Enables or disables trilinear filtering for textures; only affects textures
-                        that are loaded after setting the option. (Values: 0, 1; Default: 1)
- :max-anisotropy   - Sets the quality for anisotropic filtering; only affects textures that
-                        are loaded after setting the option. (Values: 1, 2, 4, 8; Default: 1)
- :tex-compression     - Enables or disables texture compression; only affects textures that are
-                        loaded after setting the option. (Values: 0, 1; Default: 0)
- :load-textures       - Enables or disables loading of texture images; option can be used to
-                        minimize loading times for testing. (Values: 0, 1; Default: 1)
- :fast-animation      - Disables or enables inter-frame interpolation for animations. (Values: 0, 1; Default: 1)
- :shadowmap-size      - Sets the size of the shadow map buffer (Values: 128, 256, 512, 1024, 2048; Default: 1024)
- :sample-count        - Maximum number of samples used for multisampled render targets; only affects pipelines
-                        that are loaded after setting the option. (Values: 0, 2, 4, 8, 16; Default: 0)
- :wireframe-mode      - Enables or disables wireframe rendering
- :debug-view-mode     - Enables or disables debug view where geometry is rendered in wireframe without shaders and
-                        lights are visualized using their screen space bounding box. (Values: 0, 1; Default: 0)
- :dump-failed-shaders - Enables or disables storing of shader code that failed to compile in a text file; this can be
-                        useful in combination with the line numbers given back by the shader compiler.
-                       (Values: 0, 1; Default: 0)
-"
-  (:max-log-level 1)
-  :max-num-messages
-  :trilinear-filtering
-  :max-anisotropy
-  :tex-compression
-  :load-textures
-  :fast-animation
-  :shadow-map-size
-  :sample-count
-  :wireframe-mode
-  :debug-view-mode
-  :dump-failed-shaders)
-
-(defcenum engine-stats
-  "The available engine statistic parameters.
-
- :tri-count        - Number of triangles that were pushed to the renderer
- :batch-count      - Number of batches (draw calls)
- :light-pass-count - Number of lighting passes
- :frame-time       - Time in ms between two finalizeFrame calls
- :custom-time      - Value of custom timer (useful for profiling engine functions)
-"
-  (:tri-count 100)
-  :batch-count
-  :light-pass-count
-  :frame-time
-  :custom-time)
-
-(defcenum resource-type
-  "Enum: resource-type - The available resource types.
-
- :undefined    - An undefined resource, returned by getResourceType in case of error
- :scene-graph  - Scene graph subtree stored in XML format
- :geometry     - Geometrical data containing bones, vertices and triangles
- :animation    - Animation data
- :material     - Material script
- :code         - Text block containing shader source code
- :shader       - Shader program
- :texture-2d   - Two-dimensional texture map
- :texture-cube - Cube map texture
- :effect       - Particle configuration
- :pipeline     - Rendering pipeline
-"
-  (:undefined  0)
-  :scene-graph
-  :geometry
-  :animation
-  :material
-  :code
-  :shader
-  :texture
-  :particle-effect
-  :pipeline
-  (:sound 200))
-
-
-(defbitfield resource-flags
-  "Enum: resource-flags - The available flags used when adding a resource.
-
-   :no-query            - Excludes resource from being listed by queryUnloadedResource function.
-   :no-tex-compression  - Disables texture compression for Texture2D or TextureCube resource.
-   :no-tex-mipmaps      - Disables generation of mipmaps for textures.
-"
-  (:no-query #x0001)
-  (:no-tex-compression #x0002)
-  (:no-tex-mipmaps #x0004))
-
-(defcenum resource-parameter
-    "
-The available Geometry resource parameters:
-
-   :vertex-count - Number of vertices; valid for getResourceParami
-   :index-count  - Number of triangle indices; valid for getResourceParami
-   :vertex-data  - Vertex positon data (pointer to float); valid for getResourceData
-   :index-data   - Triangle indices (pointer to uint); valid for getResourceData
-
-The available Animation resource parameters:
-
-   :frame-count   - Number of animation frames; valid for getResourceParami
-
-The available Material resource parameters:
-
-   :class           - Hierarchical class name (Default: empty string);
-                             valid for get-/setResourceParamstr
-   :link        - Link to other material resource;
-                             valid for get-/setResourceParami
-   :shader      - Shader resource used for rendering;
-                             valid for get-/setResourceParami
-
-   The available Texture2D and TextureCube resource parameters.
-
-   :pixel-data - Image pixel data (pointer to unsigned char); valid for updateResourceData for Texture2D
-   :tex-type   - Texture type (2D or Cube); valid for getResourceParami
-   :tex-format - Pixel format; valid for getResourceParami
-   :width      - Image width in pixels; valid for getResourceParami
-   :height     - Image height in pixels; valid for getResourceParami
-
-The available Effect resource parameters.
-
-   :life-min          - Minimum value for selecting random life time; valid for get-/setResourceParamf
-   :life-max          - Maximum value for selecting random life time; valid for get-/setResourceParamf
-   :move-vel-min      - Minimum value for selecting random initial value of velocity defining
-                        how many units per second particle is moving; valid for get-/setResourceParamf
-   :move-vel-max      - Maximum value for selecting random initial value of velocity defining
-                        how many units per second particle is moving; valid for get-/setResourceParamf
-   :move-vel-end-rate - Percentage of the initial translation velocity value when particle is dying; 
-                       valid for get-/setResourceParamf
-   :rot-vel-min       - Minimum value for selecting random initial value of velocity defining
-                        how many degrees per second particle is rotating; valid for get-/setResourceParamf
-   :rot-vel-max       - Maximum value for selecting random initial value of velocity defining
-                        how many degrees per second particle is rotating; valid for get-/setResourceParamf
-   :rot-vel-end-rate  - Percentage of the initial rotation velocity value when particle is dying;
-                        valid for get-/setResourceParamf
-   :size-vel-min      - Minimum value for selecting random initial size value;
-                        valid for get-/setResourceParamf
-   :size-vel-max      - Maximum value for selecting random initial size value;
-                        valid for get-/setResourceParamf
-   :size-vel-end-rate - Percentage of the initial size value when particle is dying;
-                        valid for get-/setResourceParamf
-   :col-r-min         - Minimum value for selecting random initial red color value;
-                        valid for get-/setResourceParamf
-   :col-r-max         - Maximum value for selecting random initial red color value;
-                        valid for get-/setResourceParamf
-   :col-r-end-rate    - Percentage of the initial red value when particle is dying;
-                        valid for get-/setResourceParamf
-   :col-g-min         - Minimum value for selecting random initial green color value;
-                        valid for get-/setResourceParamf
-   :col-g-max         - Maximum value for selecting random initial green color value;
-                        valid for get-/setResourceParamf
-   :col-g-end-rate    - Percentage of the initial green value when particle is dying;
-                        valid for get-/setResourceParamf
-   :col-b-min         - Minimum value for selecting random initial blue color value;
-                        valid for get-/setResourceParamf
-   :col-b-max         - Maximum value for selecting random initial blue color value;
-                        valid for get-/setResourceParamf
-   :col-b-end-rate    - Percentage of the initial blue value when particle is dying;
-                        valid for get-/setResourceParamf
-   :col-a-min         - Minimum value for selecting random initial alpha color value;
-                        valid for get-/setResourceParamf
-   :col-a-max         - Maximum value for selecting random initial alpha color value;
-                        valid for get-/setResourceParamf
-   :col-a-end-rate    - Percentage of the initial alpha value when particle is dying;
-                        valid for get-/setResourceParamf
-
-The available Sound resource parameters.
-
-   :sampling-rate     - Sampling rate in Hz [type: int, read-only]
-   :bit-depth         - Bit-depth of the sound [type: int, read-only]
-   :channels          - Number of channels [type: int, read-only]
-   :bit-rate          - Average bitrate [type: int, read-only]
-   :runtime           - Total runtime of the sound in seconds [type: float, read-only]
-"
-  (:vertex-count 200)
-  :index-count
-  :vertex-data
-  :index-data
-
-  (:frame-count 300)
-
-  (:class 400)
-  :link
-  :shader
-
-  (:pixel-data 700)
-  :tex-type
-  :tex-format
-  :width
-  :height
-  
-  (:life-min 900)
-  :life-max
-  :move-vel-min
-  :move-vel-max
-  :move-vel-end-rate
-  :rot-vel-min
-  :rot-vel-max
-  :rot-vel-end-rate
-  :size-min
-  :size-max
-  :size-end-rate
-  :col-r-min
-  :col-r-max
-  :col-r-end-rate
-  :col-g-min
-  :col-g-max
-  :col-g-end-rate
-  :col-b-min
-  :col-b-max
-  :col-b-end-rate
-  :col-a-min
-  :col-a-max
-  :col-a-end-rate
-
-  ;; sound extension resource parameters
-  (:sampling-rate 20000)
-  :bit-depth
-  :channels
-  :bit-rate
-  :runtime)
-
-
-(defcenum node-type
-  "Enum: node-type: The available scene node types.
-
-   :undefined       - An undefined node type, returned by getNodeType in case of error
-   :group           - Group of different scene nodes
-   :model           - 3D model with optional skeleton
-   :mesh            - Subgroup of a model with triangles of one material
-   :joint           - Joint for skeletal animation
-   :light           - Light source
-   :camera          - Camera giving view on scene
-   :emitter         - Particle system emitter
-   :terrain         - Terrain node
-   :listener        - Listener node
-   :sound           - Sound node
-"
-  (:undefined 0)
-  :group
-  :model
-  :mesh
-  :joint
-  :light
-  :camera
-  :emitter
-  (:terrain 100)
-  (:listener 201)
-  (:sound 202))
-
-
-(defcenum node-parameter
-  "
-The available scene node parameters:
-
-   :name                 - Name of the scene node [type: string]
-   :attachment-string    - Optional application-specific meta data for a node
-                           encapsulated in an 'Attachment' XML string [type: string]
-
-The available Group node parameters:
-
-   :min-dist             - Minimal distance from the viewer for the node to be visible
-                           (default: 0.0); used for level of detail [type: float]
-   :max-dist             - Maximal distance from the viewer for the node to be visible
-                           (default: infinite); used for level of detail [type: float]
-
-The available Model node parameters:
-
-   :geometry             - Geometry resource used for the model [type: ResHandle]
-   :software-skinning    - Enables or disables software skinning (default: 0) [type: int]
-   :lod-dist-1           - Distance to camera from which on LOD1 is used (default: infinite) [type: float]
-                           (must be a positive value larger than 0.0)
-   :lod-dist-2           - Distance to camera from which on LOD2 is used
-                           (may not be smaller than LodDist1) (default: infinite) [type: float]
-   :lod-dist-3           - Distance to camera from which on LOD3 is used
-                           (may not be smaller than LodDist2) (default: infinite) [type: float]
-   :lod-dist-4          - Distance to camera from which on LOD4 is used
-                                    (may not be smaller than LodDist3) (default: infinite) [type: float]
-
-   The available Mesh node parameters:
-
-   :mesh-material        - Material resource used for the mesh [type: ResHandle]
-   :batch-start          - First triangle index of mesh in Geometry resource of parent Model node [type: int, read-only]
-   :batch-count          - Number of triangle indices used for drawing mesh [type: int, read-only]
-   :vert-r-start         - First vertex in Geometry resource of parent Model node [type: int, read-only]
-   :vert-r-end           - Last vertex in Geometry resource of parent Model node [type: int, read-only]
-   :lod-level            - LOD level of Mesh; the mesh is only rendered if its LOD level corresponds to
-                           the model's current LOD level which is calculated based on the LOD distances
-                           (default: 0) [type: int]
-
-The available Joint node parameters:
-
-   :joint-index          - Index of joint in Geometry resource of parent Model node [type: int, read-only]
-
-The available Light node parameters:
-
-   :light-material       - Material resource used for the light [type: ResHandle]
-   :radius               - Radius of influence (default: 100.0) [type: float]
-   :fov                  - Field of view (FOV) angle (default: 90.0) [type: float]
-   :col-r                - Red component of light diffuse color (default: 1.0) [type: float]
-   :col-g                - Green component of light diffuse color (default: 1.0) [type: float]
-   :col-b                - Blue component of light diffuse color (default: 1.0) [type: float]
-   :shadow-map-count     - Number of shadow maps used for light source (values: 0, 1, 2, 3, 4; default: 0) [type: int]
-   :shadow-split-lambda  - Constant determining segmentation of view frustum for Parallel Split Shadow Maps
-                                             (default: 0.5) [type: float]
-   :shadow-map-bias      - Bias value for shadow mapping to reduce shadow acne (default: 0.005) [type: float]
-
-The available Camera node parameters:
-
-   :pipeline             - Pipeline resource used for rendering [type: ResHandle]
-   :output-tex           - Texture2D resource used as output buffer (can be 0 to use main framebuffer) (default: 0) [type: ResHandle]
-   :output-buffer-index  - Index of the output buffer for stereo rendering (values: 0 for left eye, 1 for right eye) (default: 0) [type: int]
-   :left-plane           - Coordinate of left plane relative to near plane center (default: -0.055228457) [type: float]
-   :right-plane          - Coordinate of right plane relative to near plane center (default: 0.055228457) [type: float]
-   :bottom-plane         - Coordinate of bottom plane relative to near plane center (default: -0.041421354f) [type: float]
-   :top-plane            - Coordinate of top plane relative to near plane center (default: 0.041421354f) [type: float]
-   :near-plane           - Distance of near clipping plane (default: 0.1) [type: float]
-   :far-plane            - Distance of far clipping plane (default: 1000) [type: float]
-   :orthographic         - Flag for setting up an orthographic frustum instead of a perspective one (default: 0) [type:int]
-   :occlusion-culling    - Flag for enabling occlusion culling (default: 0) [type:int]
-
-The available Emitter node parameters:
-
-   :emitter-material     - Material resource used for rendering [type: ResHandle]
-   :particle-effect-res  - Effect resource which configures particle properties [type: ResHandle]
-   :max-count            - Maximal number of particles living at the same time [type: int]
-   :respawn-count        - Number of times a single particle is recreated after dying (-1 for infinite) [type: int]
-   :delay                - Time in seconds before emitter begins creating particles (default: 0.0) [type: float]
-   :emission-rate        - Maximal number of particles to be created per second (default: 0.0) [type: float]
-   :spread-angle         - Angle of cone for random emission direction (default: 0.0) [type: float]
-   :force-X              - X-component of force vector applied to particles (default: 0.0) [type: float]
-   :force-Y              - Y-component of force vector applied to particles (default: 0.0) [type: float]
-   :force-Z              - Z-component of force vector applied to particles (default: 0.0) [type: float]
-
-The available Terrain node parameters:
-                
-   :height-map-res       - Height map texture; must be square and a power of two [type: ResHandle, write-only]
-   :material-res         - Material resource used for rendering the terrain [type: ResHandle]
-   :mesh-quality         - Constant controlling the overall resolution of the terrain mesh (default: 50.0) [type: float]
-   :skirt-height         - Height of the skirts used to hide cracks (default: 0.1) [type: float]
-   :block-size           - Size of a terrain block that is drawn in a single render call; must be 2^n+1 (default: 17) [type: int]
-
-The available Listener node parameters.
-   :master-gain          - Amplitude multiplier (volume), this affects all sounds (default: 1.0) [type: float]
-   :doppler-factor       - *currently has no effect* Exaggeration factor for doppler effect (default: 1.0) [type: float]
-   :speed-of-sound       - *currently has no effect* Speed of sound in same units as velocities (default: 343.3) [type: float]
-
-The available Sound node parameters.
-
-   :sound-res            - The resource used for audio playback [type: ResHandle]
-   :gain                 - Amplitude multiplier (volume) (default: 1.0) [type: float]
-   :pitch                - Pitch shift (value range: 0.5-2.0; default: 1.0) [type: float]
-   :offset               - Position of the sound's playback in seconds [type: float]
-   :loop                 - Determines if the sound should loop after it reaches the end (Values: 0, 1) [type: int]
-   :max-distance         - This is used for distance based attenuation calculations, for explanation on how this
-                           exactly is used in each distance model see the DistanceModels section. This will also clamp
-                           distances greater than this value if the InverseDistanceClamped, LinearDistanceClamped or
-                           ExponentDistanceClamped distance model is used. (default: MAX_FLOAT) [type: float]
-   :rolloff-factor       - This is used for distance based attenuation calculations, for explanation on how this
-                           exactly is used in each distance model see the DistanceModels section. (default: 1.0) [type: float]
-   :reference-distance   - This is used for distance based attenuation calculations, for explanation on how this
-                           exactly is used in each distance model see the DistanceModels section. This will also clamp
-                           distances below this value if the InverseDistanceClamped, LinearDistanceClamped or
-                           ExponentDistanceClamped distance model is used. (default: 1.0) [type: float]
-   :min-gain             - This indicates the minimal gain guaranteed for the sound. At the end of processing of various attenuation
-                           factors such as distance based attenuation and the sound's Gain value, the effective gain calculated is
-                           compared to this value. If the effective gain is lower than this value, this value is applied. This happens
-                           before the listener's MasterGain is applied. (value range: 0.0-1.0; default: 0.0) [type: float]
-   :max-gain             - This indicates the maximal gain permitted for the sound. At the end of processing of various attenuation
-                           factors such as distance based attenuation and the sound's Gain value, the effective gain calculated is
-                           compared to this value. If the effective gain is higher than this value, this value is applied. This happens
-                           before the listener's MasterGain is applied. (value range: 0.0-1.0; default: 1.0) [type: float]
-"
-  ;; scene-node-params
-  (:name 1)
-  :attachment-string
-
-  ;; group-node-params
-  (:min-dist 100)
-  :max-dist
-
-  ;; model-node-params
-  (:geometry 200)
-  :software-skinning
-  :lod-dist-1
-  :lod-dist-2
-  :lod-dist-3
-  :lod-dist-4
-
-  ;; mesh-node-params
-  (:mesh-material 300)
-  :batch-start
-  :batch-count
-  :vert-r-start
-  :vert-r-end
-  :lod-level
-
-  ;; joint-node-params
-  (:joint-index 400)
-  
-  ;; light-node-params
-  (:light-material 500)
-  :radius
-  :fov
-  :col-r
-  :col-g
-  :col-b
-  :shadow-map-count
-  :shadow-split-lambda
-  :shadow-map-bias
-
-  ;; camera-node-params
-  (:pipeline 600)
-  :output-tex
-  :output-buffer-index
-  :left-plane
-  :right-plane
-  :bottom-plane
-  :top-plane
-  :near-plane
-  :far-plane
-  :orthographic
-  :occlusion-culling
-  
-  ;; emitter-node-params
-  (:emitter-material 700)
-  :particle-effect-res
-  :max-count
-  :respawn-count
-  :delay
-  :emission-rate
-  :spread-angle
-  :force-X
-  :force-Y
-  :force-Z
-
-  ;; terrain node params
-  (:height-map-res 10000)
-  :terrain-material
-  :mesh-quality
-  :skirt-height
-  :block-size
-  
-  ;; sound extension node params
-  (:master-gain  20000)
-  :doppler-factor
-  :speed-of-sound
-
-  (:sound-res  21000)
-  :gain
-  :pitch
-  :offset
-  :loop
-  :max-distance
-  :rolloff-factor
-  :reference-distance
-  :min-gain
-  :max-gain)
-
-  
-(defcenum distance-model
-  "The available distance models.
-
-The variables used in the calculations explained::
-  - Distance = the distance between the listener and sound node
-  - Gain = the sound's volume after distance based attenuation
-  - ReferenceDistance, RolloffFactor and MaxDistance = sound node parameters
-
-  :none                      - No distance based attenuation will be applied.
-  :inverse-distance          - Distance based attenuation will be calculated using the following formula:
-                               Gain = ReferenceDistance / (ReferenceDistance + RolloffFactor * (Distance-ReferenceDistance));
-                               ReferenceDistance indicates the distance which the listener will experience the sound's Gain value.
-                               RolloffFactor can used to increase or decrease the range of a sound by increasing or decreasing the attenuation, respectivly.
-  :inverse-distance-clamped  - This is the same as InverseDistance but it clamps the Distance before calculating the effective Gain:
-                               Distance = max(Distance, ReferenceDistance);
-                               Distance = min(Distance, MaxDistance);
-                               (default distance model)
-  :linear-distance           - This models a linear drop-off in gain as distance increases between the sound and listener.
-                               Distance based attenuation will be calculated using the following formula:
-                               Gain = (1-RolloffFactor * (Distance-ReferenceDistance) / (MaxDistance-ReferenceDistance));
-  :linear-distance-clamped   - This is the same as LinearDistance but it clamps the Distance before calculating the effective Gain:
-                               Distance = max(Distance, ReferenceDistance);
-                               Distance = min(Distance, MaxDistance);
-  :exponent-distance         - This models an exponential drop-off in gain as distance increases between the sound and listener.
-                               Distance based attenuation will be calculated using the following formula:
-                               Gain = (Distance / ReferenceDistance) ^ (-RolloffFactor);
-                               where the ^ operation raises it's first operand to the power of it's second operand.
-  :exponent-distance-clamped - This is the same as ExponentDistance but it clamps the Distance before calculating the effective Gain:
-                               Distance = max(Distance, ReferenceDistance);
-                               Distance = min(Distance, MaxDistance);
-"
-  :none
-  :inverse-distance
-  :inverse-distance-clamped
-  :linear-distance
-  :linear-distance-clamped
-  :exponent-distance
-  :exponent-distance-clamped)
-
-
-;;; Helper macro to define a horde3d API function and declare it inline.
-(defmacro defh3fun ((cname lname) result-type &body body)
-  `(progn
-     (declaim (inline ,lname))
-     (defcfun (,cname ,lname :library horde3d) ,result-type ,@body)))
-
-;;;; Group: Basic functions
-
-(defh3fun ("getVersionString" get-version-string) string
+;; const char* h3dGetVersionString();
+(defh3fun ("h3dGetVersionString" get-version-string) string
   "Returns the engine version string.
 
 This function returns a pointer to a string containing the current version of
@@ -604,22 +33,45 @@ Returns:
       pointer to the version string
 ")
 
-(defh3fun ("checkExtension" check-extension) boolean
+;; bool h3dCheckExtension( const char* extensionName );
+(defh3fun ("h3dCheckExtension" check-extension) boolean
   "Checks if an extension is part of the engine library.
 
 This function checks if a specified extension is contained in the DLL/shared
 object of the engine.
 
 Parameters:
-    extensionName   - name of the extension
+    extension-name   - name of the extension
 
 Returns:
     true if extension is implemented, otherwise false
 "
   (extension-name string))
 
-;; bool init();
-(defh3fun ("init" init) void
+;; bool h3dGetError();
+(defh3fun ("h3dGetError" get-error) boolean
+  "Checks if an error occured.
+	
+This function checks if an error occured in a previous API function
+call. If an error flag is set, the function resets the flag and
+returns true. The function will solely report errors that originate
+from a violated precondition, like an invalid parameter that is passed
+to an API function. Errors that happen during the execution of a
+function, for example failure of initializing the engine due to a
+missing hardware feature, can be catched by checking the return value
+of the corresponding API function.  More information about the error
+can be retrieved by checking the message queue, provided that the
+message level is set accordingly.
+	
+Parameters:
+	none
+	
+Returns:
+	true in there was an error, otherwise false
+")
+
+;; void h3dInit();
+(defh3fun ("h3dInit" init) void
   "Initializes the engine.
 
   This function initializes the graphics engine and makes it ready for use. It has
@@ -635,8 +87,8 @@ Returns:
           true in case of success, otherwise false
 ")
 
-;; void release();
-(defh3fun ("release" release) void
+;; void h3dRelease();
+(defh3fun ("h3dRelease" release) void
   "Releases the engine.
 
  This function releases the engine and frees all objects and associated
@@ -649,9 +101,8 @@ Returns:
          nothing
 ")
 
-
-;; void setupViewport( int x, int y, int width, int height, bool resizeBuffers);
-(defh3fun ("setupViewport" setup-viewport) void
+;; void h3dSetupViewport( int x, int y, int width, int height, bool resizeBuffers);
+(defh3fun ("h3dSetupViewport" setup-viewport) void
   "Sets the location and size of the viewport.
                 
   This function sets the location and size of the viewport. It has to be called
@@ -676,8 +127,8 @@ Returns:
 
 
 
-;; bool render( NodeHandle cameraNode );
-(defh3fun ("render" render) boolean
+;; bool h3dRender( H3DNode cameraNode );
+(defh3fun ("h3dRender" render) boolean
   "Main rendering function.
 
   This is the main function of the engine. It executes all the rendering,
@@ -690,11 +141,11 @@ Returns:
   Returns:
           true in case of success, otherwise false
 "
-  (camera-node node-handle))
+  (camera-node node))
 
 
-;; bool finalizeFrame();
-(defh3fun ("finalizeFrame" finalize-frame) boolean
+;; bool h3dFinalizeFrame();
+(defh3fun ("h3dFinalizeFrame" finalize-frame) void
   "Marker for end of frame.
                 
 This function tells the engine that the current frame is finished and that all
@@ -704,11 +155,11 @@ Parameters:
         none
                         
 Returns:
-        true in case of success, otherwise false
+        nothing
 ")
 
-;; void clear();
-(defh3fun ("clear" clear) void
+;; void h3dClear();
+(defh3fun ("h3dClear" clear) void
   "Removes all resources and scene nodes.
 
   This function removes all nodes from the scene graph except the root node and
@@ -723,10 +174,8 @@ Returns:
           nothing
 ")
 
-
-
-;; const char *getMessage( int *level, float *time );
-(defh3fun ("getMessage" get-message) string
+;; const char *h3dGetMessage( int *level, float *time );
+(defh3fun ("h3dGetMessage" get-message) string
   "Gets the next message from the message queue.
 
   This function returns the next message string from the message queue and writes
@@ -743,64 +192,60 @@ Returns:
   (level (:pointer int))
   (time (:pointer float)))
 
-
-;; float getOption( EngineOptions::List param );
-(defh3fun ("getOption" get-option) float
+;; float h3dGetOption( H3DOptions::List param );
+(defh3fun ("h3dGetOption" get-option) float
   "Gets an option parameter of the engine.
 
   This function gets a specified option parameter and returns its value.
 
   Parameters:
-          param   - option parameter
+          parameter   - option parameter
 
   Returns:
           current value of the specified option parameter
 "
-  (param engine-option))
+  (parameter option))
 
-
-;; bool setOption( EngineOptions::List param, float value );
-(defh3fun ("setOption" set-option) boolean
+;; bool h3dSetOption( H3DOptions::List param, float value );
+(defh3fun ("h3dSetOption" set-option) boolean
   "Sets an option parameter for the engine.
 
   This function sets a specified option parameter to a specified value.
 
   Parameters:
-          param   - option parameter
+          parameter   - option parameter
           value   - value of the option parameter
 
   Returns:
           true if the option could be set to the specified value, otherwise false
 "
-  (param engine-option)
+  (parameter option)
   (value float))
 
-
-
-;; float getStat( EngineStats::List param, bool reset );
-(defh3fun ("getStat" get-stat) float
+;; float h3dGetStat( EngineStats::List param, bool reset );
+(defh3fun ("h3dGetStat" get-statistics) float
   "Gets a statistic value of the engine.
 
 This function returns the value of the specified statistic. The reset flag makes
 it possible to reset the statistic value after reading.
 
 Parameters:
-        param   - statistic parameter
+        parameter   - statistic parameter
         reset   - flag specifying whether statistic value should be reset
 
 Returns:
         current value of the specified statistic parameter
 "
-  (param engine-stats)
+  (parameter statistics)
   (reset boolean))
 
-
-;; void showOverlay( float x_ll, float y_ll, float u_ll, float v_ll,
-;;                   float x_lr, float y_lr, float u_lr, float v_lr,
-;;                   float x_ur, float y_ur, float u_ur, float v_ur,
-;;                   float x_ul, float y_ul, float u_ul, float v_ul,
-;;                   ResHandle materialRes, int layer);
-(defh3fun ("showOverlay" show-overlay) void
+;; void h3dShowOverlay( float x_tl, float y_tl, float u_tl, float v_tl,
+;;                          float x_bl, float y_bl, float u_bl, float v_bl,
+;;                          float x_br, float y_br, float u_br, float v_br,
+;;                          float x_tr, float y_tr, float u_tr, float v_tr,
+;;                          float colR, float colG, float colB, float colA,
+;;                          H3DRes materialRes, int layer );
+(defh3fun ("h3dShowOverlay" show-overlay) void
   "Shows an overlay on the screen.
                 
 This function displays an overlay with a specified material at a specified position on the screen.
@@ -813,13 +258,13 @@ smaller layer numbers are drawn before overlays with higher layer numbers.
 Note that the overlays have to be removed manually using the function clearOverlays.
 
 Parameters:
-        x_tl, y_tl, u_tl, v_tl  - position and texture coordinates of the top-left corner
-        x_bl, y_bl, u_bl, v_bl  - position and texture coordinates of the bottom-left corner
-        x_br, y_br, u_br, v_br  - position and texture coordinates of the bottom-right corner
-        x_tr, y_tr, u_tr, v_tr  - position and texture coordinates of the top-right corner
-        colR, colG, colB, colA  - color of the overlay that is set for the material's shader
-        materialRes             - material resource used for rendering
-        layer                   - layer index of the overlay (Values: from 0 to 7)
+        x-tl, y-tl, u-tl, v-tl      - position and texture coordinates of the top-left corner
+        x-bl, y-bl, u-bl, v-bl      - position and texture coordinates of the bottom-left corner
+        x-br, y-br, u-br, v-br      - position and texture coordinates of the bottom-right corner
+        x-tr, y-tr, u-tr, v-tr      - position and texture coordinates of the top-right corner
+        col-r, col-g, col-b, col-a  - color of the overlay that is set for the material's shader
+        material-resource           - material resource used for rendering
+        layer                       - layer index of the overlay (Values: from 0 to 7)
         
 Returns:
         nothing
@@ -829,12 +274,11 @@ Returns:
   (x-br float) (y-br float) (u-br float) (v-br float)
   (x-tr float) (y-tr float) (u-tr float) (v-tr float)
   (col-r float) (col-g float) (col-b float) (col-a float)
-  (material-res resource-handle)
+  (material-resource resource)
   (layer int))
 
-
-;; void clearOverlays();
-(defh3fun ("clearOverlays" clear-overlays) void
+;; void h3dClearOverlays();
+(defh3fun ("h3dClearOverlays" clear-overlays) void
   "Removes all overlays.
 
 This function removes all overlays that were added using showOverlay.
@@ -846,28 +290,27 @@ Returns:
         nothing
 ")
 
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: General resource management functions
 
-;;;;  Group: General resource management functions
-
-
-;; int getResourceType( ResHandle res );
-(defh3fun ("getResourceType" get-resource-type) int
+;; int h3dGetResType( H3DRes res );
+(defh3fun ("h3dGetResType" get-resource-type) resource-type
   "Returns the type of a resource.
 
 This function returns the type of a specified resource. If the resource handle
 is invalid, he function returns the resource type 'Unknown'.
 
 Parameters:
-        res     - handle to the resource
+        resource  - handle to the resource
 
 Returns:
         type of the resource
 "
-  (res resource-handle))
+  (resource resource))
 
 
-;; const char *getResourceName( ResHandle res );
-(defh3fun ("getResourceName" get-resource-name) string
+;; const char *h3dGetResName( H3DRes res );
+(defh3fun ("h3dGetResName" get-resource-name) string
   "Returns the name of a resource.
 
 This function returns a pointer to the name of a specified resource. If the
@@ -877,16 +320,16 @@ Important Note: The pointer is const and allows only read access to the data. Do
 data of the pointer since that can corrupt the engine's internal states!*
 
 Parameters:
-        res     - handle to the resource
+        resource  - handle to the resource
 
 Returns:
         name of the resource or empty string in case of failure
 "
-  (res resource-handle))
+  (resource resource))
 
 
-;; DLL ResHandle getNextResource( int type, ResHandle start );
-(defh3fun ("getNextResource" get-next-resource) resource-handle
+;; H3DRes h3dGetNextResource( int type, H3DRes start );
+(defh3fun ("h3dGetNextResource" get-next-resource) resource
   "Returns the next resource of the specified type.
                 
 This function searches the next resource of the specified type and returns its handle.
@@ -902,11 +345,11 @@ Parameters:
 Returns:
         handle to the found resource or 0 if it does not exist
 "
-  (type resource-type) (start resource-handle))
+  (type resource-type) (start resource))
 
 
-;; ResHandle findResource( int type, const char *name );
-(defh3fun ("findResource" find-resource) resource-handle
+;; H3DRes h3dFindResource( int type, const char *name );
+(defh3fun ("h3dFindResource" find-resource) resource
   "Finds a resource and returns its handle.
 
 This function searches the resource of the specified type and name and returns
@@ -924,8 +367,8 @@ Returns:
   (name string))
 
 
-;; ResHandle addResource( int type, const char *name, int flags );
-(defh3fun ("addResource" add-resource) resource-handle
+;; H3DRes h3dAddResource( int type, const char *name, int flags );
+(defh3fun ("h3dAddResource" add-resource) resource
   "Adds a resource.
 
 This function tries to add a resource of a specified type and name to the
@@ -947,9 +390,8 @@ Returns:
   (name string)
   (flags resource-flags))
 
-
-;; ResHandle cloneResource( ResHandle sourceRes, const char *name );
-(defh3fun ("cloneResource" clone-resource) resource-handle
+;; H3DRes h3dCloneResource( H3DRes sourceRes, const char *name );
+(defh3fun ("h3dCloneResource" clone-resource) resource
   "Duplicates a resource.
 
 This function duplicates a specified resource. In the cloning process a new
@@ -961,18 +403,18 @@ string is empty, a unique name for the resource is generated automatically.
 *Note: The name string may not contain a colon character (:)*
 
 Parameters:
-        sourceRes       - handle to resource to be cloned
-        name            - name of new resource (can be empty for auto-naming)
+        resource - handle to resource to be cloned
+        name     - name of new resource (can be empty for auto-naming)
 
 Returns:
         handle to the cloned resource or 0 in case of failure
 "
-  (source-res resource-handle)
+  (resource resource)
   (name string))
 
 
-;; int removeResource( ResHandle res );
-(defh3fun ("removeResource" remove-resource) int
+;; int h3dRemoveResource( H3DRes res );
+(defh3fun ("h3dRemoveResource" remove-resource) int
   "Removes a resource.
 
 This function decreases the user reference count of a specified resource. When
@@ -981,31 +423,29 @@ resource can be released and removed using the API fuction
 releaseUnusedResources.
 
 Parameters:
-        res     - handle to the resource to be removed
+        resource  - handle to the resource to be removed
 
 Returns:
         the number of references that the application is still holding after removal or -1 in case of an error
 "
-  (res resource-handle))
+  (resource resource))
 
-
-;; bool isResourceLoaded( ResHandle res );
-(defh3fun ("isResourceLoaded" is-resource-loaded) boolean
+;; bool h3dIsResLoaded( H3DRes res );
+(defh3fun ("h3dIsResLoaded" resource-loaded-p) boolean
   "Checks if a resource is loaded.
 
 This function checks if the specified resource has been successfully loaded.
 
 Parameters:
-        res             - handle to the resource to be checked
+        resource   - handle to the resource to be checked
 
 Returns:
         true if resource is loaded, otherwise or in case of failure false
 "
-  (res resource-handle))
+  (resource resource))
 
-
-;; bool loadResource( ResHandle res, const char *data, int size );
-(defh3fun ("loadResource" load-resource) boolean
+;; bool h3dLoadResource( H3DRes res, const char *data, int size );
+(defh3fun ("h3dLoadResource" load-resource) boolean
   "Loads a resource.
 
 This function loads data for a resource that was previously added to the
@@ -1018,198 +458,263 @@ the function returns false.
 Important Note: XML-data must be NULL-terminated*
 
 Parameters:
-        res             - handle to the resource for which data will be loaded
-        data    - pointer to the data to be loaded
-        size    - size of the data block
+        resource - handle to the resource for which data will be loaded
+        data     - pointer to the data to be loaded
+        size     - size of the data block
 
 Returns:
         true in case of success, otherwise false
 "
-  (res resource-handle)
+  (resource resource)
   (data :pointer)
   (size int))
 
-
-;; bool unloadResource( ResHandle res );
-(defh3fun ("unloadResource" unload-resource) boolean
+;; void h3dUnloadResource( H3DRes res );
+(defh3fun ("h3dUnloadResource" unload-resource) void
   "Unloads a resource.
 
-This function unloads a previously loaded resource and restores the default
-values t had before loading. The state is set back to unloaded which makes it
-possible to load he resource again.
+This function unloads a previously loaded resource and restores the
+default values t had before loading. The state is set back to unloaded
+which makes it possible to load he resource again.
 
 Parameters:
-        res     - handle to resource to be unloaded
+        resource  - handle to resource to be unloaded
 
 Returns:
-        true in case of success, otherwise false
+        nothing
 "
-  (res resource-handle))
+  (resource resource))
 
-
-
-;; int getResourceParami( ResHandle res, int param );
-(defh3fun ("getResourceParami" get-resource-parami) int
-  "Gets a property of a resource.
-
-This function returns a specified property of the specified resource.  The
-property must be of the type int.
+;; int h3dGetResElemCount( H3DRes res, int elem );
+(defh3fun ("h3dGetResElemCount" get-resource-element-count) int
+  "Gets the number of elements in a resource.
+        
+This function returns how many elements of the specified element type
+a specified resource has.
 
 Parameters:
-        res     - handle to the resource to be accessed
-        param   - parameter to be accessed
+        resource - handle to the resource to be accessed
+        element  - element type
+        
+Returns:
+        number of elements
+"
+  (resource resource)
+  (element resource-parameter))
+
+;; int h3dFindResElem( H3DRes res, int elem, int param, const char *value );
+(defh3fun ("h3dFindResElem" find-resource-element) int
+  "Finds a resource element with the specified property value.
+        
+This function searches in a specified resource for the first element
+of the specified type that has the property with the specified name
+set to the specified search value.  If such element is found, its
+index is returned, otherwise the function returns -1. All string
+comparisons done for the search are case-sensitive.
+
+Parameters:
+        resource   - handle to the resource to be accessed
+        element    - element type
+        parameter  - parameter name
+        value      - parameter value to be searched for
+        
+Returns:
+        index of element or -1 if element not found
+"
+  (resource resource)
+  (element resource-element)
+  (parameter resource-parameter)
+  (value string))
+
+;; int h3dGetResParamI( H3DRes res, int element, int elemIdx, int param );
+(defh3fun ("h3dGetResParamI" get-resource-parameter-i) int
+  "Gets a property of a resource element.
+
+This function returns a specified property of the specified resource
+element.  The property must be of the type int.
+
+Parameters:
+        resource       - handle to the resource to be accessed
+        element        - element type
+        element-index  - index of element
+        parameter      - parameter to be accessed
 
 Returns:
         value of the parameter
 "
-  (res resource-handle) (param resource-parameter))
+  (resource resource)
+  (element resource-element)
+  (element-index int)
+  (parameter resource-parameter))
 
+;; void h3dSetResParamI( H3DRes res, int element, int elemIdx, int param, int value );
+(defh3fun ("h3dSetResParamI" set-resource-parameter-i) void
+  "Sets a property of a resource element.
 
-;; bool setResourceParami( ResHandle res, int param, int value );
-(defh3fun ("setResourceParami" set-resource-parami) boolean
-  "Sets a property of a resource.
-
-This function sets a specified property of the specified resource to a specified
-value.  The property must be of the type int.
+This function sets a specified property of the specified resource
+element to a specified value.  The property must be of the type int.
 
 Parameters:
-        res     - handle to the resource to be accessed
-        param   - parameter to be modified
-        value   - new value for the specified parameter
+        resource       - handle to the resource to be accessed
+        element        - element type
+        element-index  - index of element
+        parameter      - parameter to be modified
+        value          - new value for the specified parameter
 
 Returns:
-         true in case of success otherwise false
+         nothing
 "
-  (res resource-handle) (param resource-parameter) (value int))
+  (resource resource)
+  (element resource-element)
+  (element-index int)
+  (parameter resource-parameter)
+  (value int))
 
+;; float h3dGetResParamF( H3DRes res, int elem, int elemIdx, int param, int compIdx );
+(defh3fun ("h3dGetResParamF" get-resource-parameter-f) float
+  "Gets a property of a resource element.
 
-;; float getResourceParamf( ResHandle res, int param );
-(defh3fun ("getResourceParamf" get-resource-paramf) float
-  "Gets a property of a resource.
-
-This function returns a specified property of the specified resource.  The
-property must be of the type float.
+This function returns a specified property of the specified resource
+element.  The property must be of the type float.
 
 Parameters:
-        res             - handle to the resource to be accessed
-        param   - parameter to be accessed
+        resource         - handle to the resource to be accessed
+        element          - element type
+        element-index    - index of element
+        parameter        - parameter to be accessed
+	component-index  - component of the parameter to be accessed
 
 Returns:
         value of the parameter
 "
-  (res resource-handle) (param resource-parameter))
+  (resource resource)
+  (element resource-element)
+  (element-index int)
+  (parameter resource-parameter)
+  (component-index int))
 
+;; void h3dSetResParamF( H3DRes res, int elem, int elemIdx, int param, int compIdx, float value );
+(defh3fun ("h3dSetResParamF" set-resource-parameter-f) void
+  "Sets a property of a resource element.
 
-
-;; bool setResourceParamf( ResHandle res, int param, float value );
-(defh3fun ("setResourceParamf" set-resource-paramf) boolean
-  "Sets a property of a resource.
-
-This function sets a specified property of the specified resource to a specified
-value.  The property must be of the type float.
+This function sets a specified property of the specified resource
+element to a specified value.  The property must be of the type float.
 
 Parameters:
-        node    - handle to the node to be modified
-        param   - parameter to be modified
-        value   - new value for the specified parameter
+        resource         - handle to the resource to be accessed
+        element          - element type
+        element-index    - index of element
+        parameter        - parameter to be accessed
+	component-index  - component of the parameter to be accessed
+        value            - new value for the specified parameter
 
 Returns:
-         true in case of success otherwise false
+         nothing
 "
-  (res resource-handle) (param resource-parameter) (value float))
+  (resource resource)
+  (element resource-element)
+  (element-index int)
+  (parameter resource-parameter)
+  (component-index int)
+  (value float))
 
+;; const char *h3dGetResParamStr( H3DRes res, int elem, int elemIdx, int param );
+(defh3fun ("h3dGetResParamStr" get-resource-parameter-str) string
+  "Gets a property of a resource element.
 
-;; const char *getResourceParamstr( ResHandle res, int param );
-(defh3fun ("getResourceParamstr" get-resource-paramstr) string
-  "Gets a property of a resource.
-
-This function returns a specified property of the specified resource.  The
-property must be of the type string (const char *).
+This function returns a specified property of the specified resource
+element.  The property must be of the type string (const char *).
 
 *Important Note: The pointer is const and allows only read access to the data. Do never try to modify the
 ata of the pointer since that can corrupt the engine's internal states!*
 
 Parameters:
-        res             - handle to the resource to be accessed
-        param   - parameter to be accessed
+        resource       - handle to the resource to be accessed
+        element        - element type
+        element-index  - index of element
+        parameter      - parameter to be accessed
 
 Returns:
         value of the property or empty string if no such property exists
 "
-  (res resource-handle) (param resource-parameter))
+  (resource resource)
+  (element resource-element)
+  (element-index int)
+  (parameter resource-parameter))
 
 
-;; bool setResourceParamstr( ResHandle res, int param, const char *value );
-(defh3fun ("setResourceParamstr" set-resource-paramstr) boolean
-  "Sets a property of a resource.
+;; void h3dSetResParamStr( H3DRes res, int elem, int elemIdx, int param, const char *value );
+(defh3fun ("h3dSetResParamStr" set-resource-parameter-str) void
+  "Sets a property of a resource element.
 
-This function sets a specified property of the specified resource to a specified
-value.  The property must be of the type string (const char *).
+This function sets a specified property of the specified resource
+element to a specified value.  The property must be of the type
+string (const char *).
 
 Parameters:
-        node    - handle to the node to be modified
-        param   - parameter to be modified
-        value   - new value for the specified parameter
+        resource       - handle to the resource to be accessed
+        element        - element type
+        element-index  - index of element
+        parameter      - parameter to be accessed
+        value          - new value for the specified parameter
 
 Returns:
          true in case of success otherwise false
 "
-  (res resource-handle) (param resource-parameter) (value string))
+  (resource resource)
+  (element resource-element)
+  (element-index int)
+  (parameter resource-parameter)
+  (value string))
 
-
-;; const void *getResourceData( ResHandle res, int param );
-(defh3fun ("getResourceData" get-resource-data) :pointer
-  "Gives access to resource data.
-
-This function returns a pointer to the specified data of a specified
-resource. For information on the ormat (uint, float, ..) of the pointer see the
-ResourceData description.
-
-Important Note: The pointer is const and allows only read access to the data. Do never try to modify the
-ata of the pointer since that can corrupt the engine's internal states!*
+;; void *h3dMapResStream( H3DRes res, int elem, int elemIdx, int stream, bool read, bool write );
+(defh3fun ("h3dMapResStream" map-resource-stream) :pointer
+  "Maps the stream of a resource element.
+	
+This function maps the specified stream of a specified resource
+element and returns a pointer to the stream data. The required access
+to the data can be specified with the read write parameters. If read
+is false, the pointer will usually not contain meaningful data.  Not
+all resource streams can be mapped with both read and write access. If
+it is not possible to map the stream, the function will return a NULL
+pointer. A mapped stream should be unmapped again as soon as possible
+but always before subsequent API calls are made. It is only possible
+to map one stream per resource at a time.
 
 Parameters:
-        res             - handle to the resource to be accessed
-        param   - parameter indicating data of the resource that will be accessed
-
+        resource       - handle to the resource to be accessed
+        element        - element type
+        element-index  - index of element
+	stream         - stream to be mapped
+	read           - flag indicating whether read access is required
+	write          - flag indicating whether write access is required
+	
 Returns:
-        pointer to the specified resource data if it is available, otherwise NULL-pointer
+	pointer to stream data or NULL if stream cannot be mapped
 "
-  (res resource-handle) (param resource-parameter))
+  (resource resource)
+  (element resource-element)
+  (element-index int)
+  (stream int)
+  (read boolean)
+  (write boolean))
 
+;; void h3dUnmapResStream( H3DRes res );
+(defh3fun ("h3dUnmapResStream" unmap-resource-stream) void
+  "Unmaps a previously mapped resource stream.
+	
+This function unmaps a resource stream that has been mapped before.
 
-;; bool updateResourceData( ResHandle res, int param, const void *data, int size );
-(defh3fun ("updateResourceData" update-resource-data) boolean
-  "Updates the data of a resource.
-
- This function updates the content of a resource that was successfully loaded
- before. The new data must have exactly the same data layout as the data that
- was loaded.
-
- Notes on available ResourceData parameters:
-  - Texture2DResData::PixelData
-         Sets the image data of a Texture2D resource. The data pointer must
-         point to a memory block that contains the pixels of the image. Each
-         pixel needs to have 32 bit color data in BGRA format and the dimensions
-         of the image (width, height) must be exactly the same as the dimensions
-         of the image that was originally loaded for the resource. The first
-         element in the data array corresponds to the lower left corner of the
-         image and subsequent elements progress from left to right in the image.
-
-  Parameters:
-          res     - handle to the resource for which the data is modified
-          param   - data structure which will be updated
-          data    - pointer to the new data
-          size    - size of the new data block
-
-  Returns:
-          true in case of success, otherwise false
+Parameters:
+	resource  - handle to the resource to be unmapped
+	
+Returns:
+	nothing
 "
-  (res resource-handle) (param resource-parameter) (data :pointer) (size int))
+  (resource resource))
 
-
-;; ResHandle queryUnloadedResource( int index );
-(defh3fun ("queryUnloadedResource" query-unloaded-resource) resource-handle
+;; H3DRes h3dQueryUnloadedResource( int index );
+(defh3fun ("h3dQueryUnloadedResource" query-unloaded-resource) resource
   "Returns handle to an unloaded resource.
 
 This function looks for a resource that is not yet loaded and returns its
@@ -1225,8 +730,8 @@ Returns:
   (index int))
 
 
-;; void releaseUnusedResources();
-(defh3fun ("releaseUnusedResources" release-unused-resources) void
+;; void h3dReleaseUnusedResources();
+(defh3fun ("h3dReleaseUnusedResources" release-unused-resources) void
   "Frees resources that are no longer used.
 
 This function releases resources that are no longer used. Unused resources were
@@ -1240,14 +745,15 @@ Returns:
         nothing
 ")
 
-;;;;  Group: Specific resource management functions 
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: Specific resource management functions 
 
-;; ResHandle createTexture2D( const char *name, int flags, int width, int height, bool renderable );
-(defh3fun ("createTexture2D" create-texture-2d) resource-handle
+;; H3DRes h3dCreateTexture( const char *name, int width, int height, int fmt, int flags );
+(defh3fun ("h3dCreateTexture" create-texture) resource
   "Adds a Texture2D resource.
 
-This function tries to create and add a Texture2D resource with the specified
-name to the resource manager. If a Texture2D resource with the same name is
+This function tries to create and add a Texture resource with the specified
+name to the resource manager. If a Texture resource with the same name is
 already existing, the function fails. The texture is initialized with the
 specified dimensions and the resource is declared as loaded. This function is
 especially useful to create dynamic textures (e.g. for displaying videos) or
@@ -1256,24 +762,24 @@ output buffers for render-to-texture.
 *Note: The name string may not contain a colon character (:)*
 
 Parameters:
-        name            - name of the resource
-        flags           - flags used for creating the resource
-        width           - width of the texture image
-        height          - height of the texture image
-        renderable      - flag indicating whether the texture can be used as an output buffer for a Camera node
+        name    - name of the resource
+        width   - width of the texture image
+        height  - height of the texture image
+        format  - texture format (see stream formats)
+        flags   - flags used for creating the resource
 
 Returns:
         handle to the created resource or 0 in case of failure
 "
   (name string)
-  (flags resource-flags)
   (width int)
   (height int)
-  (renderable boolean))
+  (format resource-format)
+  (flags resource-flags))
 
 
-;; void setShaderPreambles( const char *vertPreamble, const char *fragPreamble );
-(defh3fun ("setShaderPreambles" set-shader-preambles) void
+;; void h3dSetShaderPreambles( const char *vertPreamble, const char *fragPreamble );
+(defh3fun ("h3dSetShaderPreambles" set-shader-preambles) void
   "Sets preambles of all Shader resources.
 
 This function defines a header that is inserted at the beginning of all
@@ -1283,8 +789,8 @@ platform-specific defines that can be employed for creating several shader code
 paths, e.g. for supporting different hardware capabilities.
 
 Parameters:
-        vertPreamble    - preamble text of vertex shaders (default: empty string)
-        fragPreamble    - preamble text of fragment shaders (default: empty string)
+        vertPreamble  - preamble text of vertex shaders (default: empty string)
+        fragPreamble  - preamble text of fragment shaders (default: empty string)
 
 Returns:
         nothing
@@ -1292,66 +798,33 @@ Returns:
   (vert-preamble string)
   (frag-preamble string))
 
-
-;; bool setMaterialUniform( ResHandle materialRes, const char *name, float a, float b, float c, float d );
-(defh3fun ("setMaterialUniform" set-material-uniform) boolean
+;; bool h3dSetMaterialUniform( H3DRes materialRes, const char *name, float a, float b, float c, float d );
+(defh3fun ("h3dSetMaterialUniform" set-material-uniform) boolean
   "Sets a shader uniform of a Material resource.
 
 This function sets the specified shader uniform of the specified material to the
 specified values.
 
 Parameters:
-        materialRes     - handle to the Material resource to be accessed
-        name            - name of the uniform as defined in Material resource
-        a, b, c, d      - values of the four components
+        material-resource  - handle to the material resource to be accessed
+        name               - name of the uniform as defined in Material resource
+        a, b, c, d         - values of the four components
 
 Returns:
-        true in case of success, otherwise false
+        true if uniform was found, otherwise false
 "
-  (material-res resource-handle) (name string) (a float) (b float) (c float) (d float))
+  (material-resource resource)
+  (name string)
+  (a float)
+  (b float)
+  (c float)
+  (d float))
 
 
-;; DLL bool setMaterialSampler( ResHandle materialRes, const char *name, ResHandle texRes );
-(defh3fun ("setMaterialSampler" set-material-sampler) boolean
-  "Binds a texture to a sampler of a Material resource.
-
-This function binds a texture resource to the specified sampler of the specified material.
-                
-Parameters:
-        materialRes  - handle to the Material resource to be accessed
-        name         - name of the sampler
-        texRes       - handle to texture resource
-                        
-Returns:
-        true in case of success, otherwise false
-"
-  (material-res resource-handle) (name string) (tex-resource resource-handle))
-
-
-;; bool setPipelineStageActivation( ResHandle pipelineRes, const char *stageName, bool enabled );
-(defh3fun ("setPipelineStageActivation" set-pipeline-stage-activation) boolean
-  "Sets the activation state of a pipeline stage.
-
-This function enables or disables a specified stage of the specified pipeline
-resource.
-
-Parameters:
-        pipelineRes     - handle to the Pipeline resource to be accessed
-        stageName       - name of the stage to be modified
-        enabled         - flag indicating whether the stage shall be enabled or disabled
-
-Returns:
-        true in case of success, otherwise false
-"
-  (pipeline-res resource-handle)
-  (stage-name string)
-  (enabled boolean))
-
-
-;; bool getPipelineRenderTargetData( ResHandle pipelineRes, const char *targetName,
-;;                                            int bufIndex, int *width, int *height, int *compCount,
-;;                                                                                float *dataBuffer, int bufferSize );
-(defh3fun ("getPipelineRenderTargetData" get-pipeline-render-target-data) boolean
+;; bool h3dGetPipelineRenderTargetData( H3DRes pipelineRes, const char *targetName,
+;;                                      int bufIndex, int *width, int *height, int *compCount,
+;;                                      float *dataBuffer, int bufferSize );
+(defh3fun ("h3dGetPipelineRenderTargetData" get-pipeline-render-target-data) boolean
   "Reads the pixel data of a pipeline render target buffer.
 
 This function reads the pixels of the specified buffer of the specified render
@@ -1364,33 +837,33 @@ but rather as a tool for debugging.  For more information about the render
 buffers please refer to the Pipeline documentation.
 
 Parameters:
-        pipelineRes     - handle to pipeline resource
-        targetName      - unique name of render target to access
-        bufIndex        - index of buffer to be accessed
-        width           - pointer to variable where the width of the buffer will be stored (can be NULL)
-        height          - pointer to variable where the height of the buffer will be stored (can be NULL)
-        compCount       - pointer to variable where the number of components will be stored (can be NULL)
-        dataBuffer      - pointer to float array where the pixel data will be stored (can be NULL)
-        bufferSize      - size of dataBuffer array in bytes
+        pipeline-resource  - handle to pipeline resource
+        target-name        - unique name of render target to access
+        buffer-index       - index of buffer to be accessed
+        width              - pointer to variable where the width of the buffer will be stored (can be NULL)
+        height             - pointer to variable where the height of the buffer will be stored (can be NULL)
+        component-count    - pointer to variable where the number of components will be stored (can be NULL)
+        data-buffer        - pointer to float array where the pixel data will be stored (can be NULL)
+        buffer-size        - size of dataBuffer array in bytes
 
 Returns:
-        true in case of success, otherwise false
+        true if render target could be found, otherwise false
 "
-  (pipeline-res resource-handle)
+  (pipeline-resource resource)
   (target-name string)
-  (buf-index int)
+  (buffer-index int)
   (width (:pointer int))
   (height (:pointer int))
-  (comp-count (:pointer int))
+  (component-count (:pointer int))
   (data-buffer (:pointer float))
   (buffer-size int))
 
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: General Scene Graph Functions
 
-;;;; Group: General Scene Graph Functions
 
-
-;; int getNodeType( NodeHandle node );
-(defh3fun ("getNodeType" get-node-type) node-type
+;; int h3dGetNodeType( H3DNode node );
+(defh3fun ("h3dGetNodeType" get-node-type) node-type
   "Returns the type of a scene node.
 
 This function returns the type of a specified scene node. If the node handle is
@@ -1402,11 +875,11 @@ Parameters:
 Returns:
         type of the scene node
 "
-  (node node-handle))
+  (node node))
 
 
-;; NodeHandle getNodeParent( NodeHandle node );
-(defh3fun ("getNodeParent" get-node-parent) node-handle
+;; H3DNode h3dGetNodeParent( H3DNode node );
+(defh3fun ("h3dGetNodeParent" get-node-parent) node
   "Returns the parent of a scene node.
 
 This function returns the handle to the parent node of a specified scene
@@ -1418,11 +891,11 @@ Parameters:
 Returns:
         handle to parent node or 0 in case of failure
 "
-  (node node-handle))
+  (node node))
 
 
-;; bool setNodeParent( NodeHandle node, NodeHandle parent );
-(defh3fun ("setNodeParent" set-node-parent) boolean
+;; bool h3dSetNodeParent( H3DNode node, H3DNode parent );
+(defh3fun ("h3dSetNodeParent" set-node-parent) boolean
   "Relocates a node in the scene graph.
 
 This function relocates a scene node. It detaches the node from its current
@@ -1437,11 +910,11 @@ Parameters:
 Returns:
         true in case of success, otherwise false
 "
-  (node node-handle) (parent node-handle))
+  (node node) (parent node))
 
 
-;; NodeHandle getNodeChild( NodeHandle node, int index );
-(defh3fun ("getNodeChild" get-node-child) node-handle
+;; H3DNode h3dGetNodeChild( H3DNode node, int index );
+(defh3fun ("h3dGetNodeChild" get-node-child) node
   "Returns the handle to a child node.
 
 This function looks for the n-th (index) child node of a specified node and
@@ -1454,11 +927,11 @@ Parameters:
 Returns:
         handle to the child node or 0 if child doesn't exist
 "
-  (node node-handle) (index int))
+  (node node) (index int))
 
 
-;; NodeHandle addNodes( NodeHandle parent, ResHandle sceneGraphRes );
-(defh3fun ("addNodes" add-nodes) node-handle
+;; H3DNode h3dAddNodes( H3DNode parent, H3DRes sceneGraphRes );
+(defh3fun ("h3dAddNodes" add-nodes) node
   "Adds nodes from a SceneGraph resource to the scene.
 
 This function creates several new nodes as described in a SceneGraph resource
@@ -1466,33 +939,34 @@ and ttaches them to a specified parent node. If an invalid scenegraph resource
 is specified or the scenegraph resource is unloaded, the function returns 0.
 
 Parameters:
-        parent                  - handle to parent node to which the root of the new nodes will be attached
-        sceneGraphRes   - handle to loaded SceneGraph resource
+        parent                 - handle to parent node to which the root of the 
+                                 new nodes will be attached
+        scene-graph-resource   - handle to loaded SceneGraph resource
 
 Returns:
         handle to the root of the created nodes or 0 in case of failure
 "
-  (parent node-handle) (scene-graph-res resource-handle))
+  (parent node) (scene-graph-resource resource))
 
 
-;; bool removeNode( NodeHandle node );
-(defh3fun ("removeNode" remove-node) boolean
+;; void h3dRemoveNode( H3DNode node );
+(defh3fun ("h3dRemoveNode" remove-node) void
   "Removes a node from the scene.
 
 This function removes the specified node and all of it's children from the
 scene.
 
 Parameters:
-        node    - handle to the node to be removed
+        node  - handle to the node to be removed
 
 Returns:
-        true in case of success otherwise false
+        nothing
 "
-  (node node-handle))
+  (node node))
 
 
-;; bool setNodeActivation( NodeHandle node, bool active );
-(defh3fun ("setNodeActivation" set-node-activation) boolean
+;; void h3dSetNodeActivation( H3DNode node, bool active );
+(defh3fun ("h3dSetNodeActivation" set-node-activation) void
   "Sets the activation (visibility) state of a node.
 
 This function sets the activation state of the specified node to active or
@@ -1503,13 +977,13 @@ Parameters:
         active  - boolean value indicating whether node shall be active or inactive
 
 Returns:
-        true in case of success otherwise false
+        nothing
 "
-  (node node-handle) (active boolean))
+  (node node) (active boolean))
 
 
-;; bool checkNodeTransformFlag( NodeHandle node, bool reset );
-(defh3fun ("checkNodeTransformFlag" check-node-transform-flag) boolean
+;; bool h3dCheckNodeTransformFlag( H3DNode node, bool reset );
+(defh3fun ("h3dCheckNodeTransformFlag" check-node-transform-flag) boolean
   "Checks if a scene node has been transformed by the engine.
 
 This function checks if a scene node has been transformed by the engine since
@@ -1526,11 +1000,13 @@ Parameters:
 Returns:
         true if node has been transformed, otherwise false
 "
-  (node node-handle) (reset boolean))
+  (node node) (reset boolean))
 
 
-;; bool getNodeTransform( NodeHandle node, float *tx, float *ty, float *tz, float *rx, float *ry, float *rz, float *sx, float *sy, float *sz );
-(defh3fun ("getNodeTransform" get-node-transform) boolean
+;; bool h3dGetNodeTransform( H3DNode node, float *tx, float *ty, float *tz,
+;;                                         float *rx, float *ry, float *rz,
+;;                                         float *sx, float *sy, float *sz );
+(defh3fun ("h3dGetNodeTransform" get-node-transform) void
   "Gets the relative transformation of a node.
 
 This function gets the translation, rotation and scale of a specified scene node
@@ -1538,23 +1014,25 @@ object. The coordinates are in local space and contain the transformation of the
 node relative to its parent.
 
 Parameters:
-        node            - handle to the node which will be accessed
-        tx, ty, tz      - pointers to variables where translation of the node will be stored (can be NULL)
-        rx, ry, rz      - pointers to variables where rotation of the node in Euler angles
-                                  will be stored (can be NULL)
-        sx, sy, sz      - pointers to variables where scale of the node will be stored (can be NULL)
+        node        - handle to the node which will be accessed
+        tx, ty, tz  - pointers to variables where translation of the node will be stored (can be NULL)
+        rx, ry, rz  - pointers to variables where rotation of the node in Euler angles
+                      will be stored (can be NULL)
+        sx, sy, sz  - pointers to variables where scale of the node will be stored (can be NULL)
 
 Returns:
-        true in case of success otherwise false
+        nothing
 "
-  (node node-handle)
+  (node node)
   (tx (:pointer float)) (ty (:pointer float)) (tz (:pointer float))
   (rx (:pointer float)) (ry (:pointer float)) (rz (:pointer float))
   (sx (:pointer float)) (sy (:pointer float)) (sz (:pointer float)))
 
 
-;; bool setNodeTransform( NodeHandle node, float tx, float ty, float tz, float rx, float ry, float rz, float sx, float sy, float sz );
-(defh3fun ("setNodeTransform" set-node-transform) boolean
+;; bool h3dSetNodeTransform( H3DNode node, float tx, float ty, float tz,
+;;                                         float rx, float ry, float rz,
+;;                                         float sx, float sy, float sz );
+(defh3fun ("h3dSetNodeTransform" set-node-transform) void
   "Sets the relative transformation of a node.
 
 This function sets the relative translation, rotation and scale of a specified
@@ -1562,22 +1040,22 @@ scene node object.  The coordinates are in local space and contain the
 transformation of the node relative to its parent.
 
 Parameters:
-        node            - handle to the node which will be modified
-        tx, ty, tz      - translation of the node
-        rx, ry, rz      - rotation of the node in Euler angles
-        sx, sy, sz      - scale of the node
+        node        - handle to the node which will be modified
+        tx, ty, tz  - translation of the node
+        rx, ry, rz  - rotation of the node in Euler angles
+        sx, sy, sz  - scale of the node
 
 Returns:
-        true in case of success otherwise false
+        nothing
 "
-  (node node-handle)
+  (node node)
   (tx float) (ty float) (tz float)
   (rx float) (ry float) (rz float)
   (sx float) (sy float) (sz float))
 
 
-;; bool getNodeTransformMatrices( NodeHandle node, const float **relMat, const float **absMat );
-(defh3fun ("getNodeTransformMatrices" get-node-transform-matrices) boolean
+;; void h3dGetNodeTransMats( H3DNode node, const float **relMat, const float **absMat );
+(defh3fun ("h3dGetNodeTransMats" get-node-transform-matrices) void
   "Returns the transformation matrices of a node.
 
 This function stores a pointer to the relative and absolute transformation
@@ -1586,21 +1064,19 @@ matrices f the specified node in the specified pointer varaibles.
 Parameters:
         node    - handle to the scene node to be accessed
         relMat  - pointer to a variable where the address of the relative transformation matrix will be stored
-         (can be NULL if matrix is not required)
+                  (can be NULL if matrix is not required)
         absMat  - pointer to a variable where the address of the absolute transformation matrix will be stored
-         (can be NULL if matrix is not required)
-
+                  (can be NULL if matrix is not required)
 
 Returns:
-        true in case of success otherwise false
+        nothing
 "
-  (node node-handle)
+  (node node)
   (rel-mat (:pointer float))
   (abs-mat (:pointer float)))
 
-
-;; bool setNodeTransformMatrix( NodeHandle node, const float *mat4x4 );
-(defh3fun ("setNodeTransformMatrix" set-node-transform-matrix) boolean
+;; void h3dSetNodeTransMat( H3DNode node, const float *mat4x4 );
+(defh3fun ("h3dSetNodeTransMat" set-node-transform-matrix) void
   "Sets the relative transformation matrix of a node.
 
 This function sets the relative transformation matrix of the specified scene
@@ -1612,123 +1088,130 @@ Parameters:
         mat4x4  - pointer to a 4x4 matrix in column major order
 
 Returns:
-        true in case of success otherwise false
+        nothing
 "
-  (node node-handle)
+  (node node)
   (mat-4x4 :pointer))
 
-
-;; float getNodeParamf( NodeHandle node, int param );
-(defh3fun ("getNodeParamf" get-node-paramf) float
+;; int h3dGetNodeParamI( H3DNode node, int param );
+(defh3fun ("h3dGetNodeParamI" get-node-parameter-i) int
   "Gets a property of a scene node.
 
-This function returns a specified property of the specified node.  The property
-must be of the type float.
+This function returns a specified property of the specified node.  The
+property must be of the type int or H3DRes.
 
 Parameters:
-        node    - handle to the node to be accessed
-        param   - parameter to be accessed
+        node       - handle to the node to be accessed
+        parameter  - parameter to be accessed
+
+Returns:
+        value of the parameter
+"
+  (node node)
+  (parameter node-parameter))
+
+;; bool h3dSetNodeParamI( H3DNode node, int param, int value );
+(defh3fun ("h3dSetNodeParamI" set-node-parameter-i) void
+  "Sets a property of a scene node.
+
+This function sets a specified property of the specified node to a
+specified value.  The property must be of the type int or H3DRes.
+
+Parameters:
+        node       - handle to the node to be modified
+        parameter  - parameter to be modified
+        value      - new value for the specified parameter
+
+Returns:
+        nothing
+"
+  (node node)
+  (parameter node-parameter)
+  (value int))
+
+;; float h3dGetNodeParamF( H3DNode node, int param, int compIdx );
+(defh3fun ("h3dGetNodeParamF" get-node-parameter-f) float
+  "Gets a property of a scene node.
+
+This function returns a specified property of the specified node.  The
+property must be of the type float.
+
+Parameters:
+        node             - handle to the node to be accessed
+        parameter        - parameter to be accessed
+        component-index  - component of the parameter to be modified
 
 Returns:
          value of the parameter
 "
-  (node node-handle) (param node-parameter))
+  (node node)
+  (parameter node-parameter)
+  (component-index int))
 
-
-;; bool setNodeParamf( NodeHandle node, int param, float value );
-(defh3fun ("setNodeParamf" set-node-paramf) boolean
+;; void h3dSetNodeParamF( H3DNode node, int param, int compIdx, float value );
+(defh3fun ("h3dSetNodeParamF" set-node-parameter-f) void
   "Sets a property of a scene node.
 
-This function sets a specified property of the specified node to a specified
-value.  The property must be of the type float.
+This function sets a specified property of the specified node to a
+specified value.  The property must be of the type float.
 
 Parameters:
-        node    - handle to the node to be modified
-        param   - parameter to be modified
-        value   - new value for the specified parameter
+        node             - handle to the node to be modified
+        parameter        - parameter to be modified
+        component-index  - component of the parameter to be modified
+        value            - new value for the specified parameter
 
 Returns:
          true in case of success otherwise false
 "
-  (node node-handle) (param node-parameter) (value float))
+  (node node)
+  (parameter node-parameter)
+  (component-index int)
+  (value float))
 
-
-;; int getNodeParami( NodeHandle node, int param );
-(defh3fun ("getNodeParami" get-node-parami) int
-  "Gets a property of a scene node.
-
-This function returns a specified property of the specified node.  The property
-must be of the type int or ResHandle.
-
-Parameters:
-        node    - handle to the node to be accessed
-        param   - parameter to be accessed
-
-Returns:
-         value of the parameter
-"
-  (node node-handle) (param node-parameter))
-
-
-;; bool setNodeParami( NodeHandle node, int param, int value );
-(defh3fun ("setNodeParami" set-node-parami) boolean
-  "Sets a property of a scene node.
-
-This function sets a specified property of the specified node to a specified
-value.  The property must be of the type int or ResHandle.
-
-Parameters:
-        node    - handle to the node to be modified
-        param   - parameter to be modified
-        value   - new value for the specified parameter
-
-Returns:
-         true in case of success otherwise false
-"
-  (node node-handle) (param node-parameter) (value int))
-
-
-;; const char *getNodeParamstr( NodeHandle node, int param );
-(defh3fun ("getNodeParamstr" get-node-paramstr) string
+;; const char *h3dGetNodeParamStr( H3DNode node, int param );
+(defh3fun ("h3dGetNodeParamStr" get-node-parameter-str) string
   "Gets a property of a scene node.
 
 This function returns a specified property of the specified node.  The property
 must be of the type string (const char *).
 
-*Important Note: The pointer is const and allows only read access to the data. Do never try to modify the
-ata of the pointer since that can corrupt the engine's internal states!*
+*Important Note: The pointer is const and allows only read access to
+the data. Do never try to modify the ata of the pointer since that can
+corrupt the engine's internal states!*
 
 Parameters:
-        node    - handle to the node to be accessed
-        param   - parameter to be accessed
+        node       - handle to the node to be accessed
+        parameter  - parameter to be accessed
 
 Returns:
          value of the property or empty string if no such property exists
 "
-  (node node-handle) (param node-parameter))
+  (node node)
+  (parameter node-parameter))
 
-
-;; bool setNodeParamstr( NodeHandle node, int param, const char *value );
-(defh3fun ("setNodeParamstr" set-node-paramstr) boolean
+;; void h3dSetNodeParamstr( H3DNode node, int param, const char *value );
+(defh3fun ("h3dSetNodeParamStr" set-node-parameter-str) void
   "Sets a property of a scene node.
 
 This function sets a specified property of the specified node to a specified
 value.  The property must be of the type string (const char *).
 
 Parameters:
-        node    - handle to the node to be modified
-        param   - parameter to be modified
-        value   - new value for the specified parameter
+        node       - handle to the node to be modified
+        parameter  - parameter to be modified
+        value      - new value for the specified parameter
 
 Returns:
          true in case of success otherwise false
 "
-  (node node-handle) (param node-parameter) (value string))
+  (node node)
+  (parameter node-parameter)
+  (value string))
 
-
-
-;; bool getNodeAABB( NodeHandle node, float *minX, float *minY, float *minZ, float *maxX, float *maxY, float *maxZ );
-(defh3fun ("getNodeAABB" get-node-aabb) boolean
+;; void h3dGetNodeAABB( H3DNode node, float *minX, float *minY, float *minZ,
+;;                                    float *maxX, float *maxY, float *maxZ );
+(defh3fun ("h3dGetNodeAABB" get-node-aabb) void
   "Gets the bounding box of a scene node.
 
 This function stores the world coordinates of the axis aligned bounding box of a
@@ -1736,20 +1219,19 @@ specified node in the specified variables. The bounding box is represented using
 the minimum and maximum coordinates on all three axes.
 
 Parameters:
-        node                            - handle to the node which will be accessed
-        minX, minY, minZ        - pointers to variables where minimum coordinates will be stored
-        maxX, maxY, maxZ        - pointers to variables where maximum coordinates will be stored
+        node                 - handle to the node which will be accessed
+        min-x, min-y, min-z  - pointers to variables where minimum coordinates will be stored
+        max-x, max-y, max-z  - pointers to variables where maximum coordinates will be stored
 
 Returns:
-        true in case of success otherwise false
+        nothing
 "
-  (node node-handle)
+  (node node)
   (min-x (:pointer float)) (min-y (:pointer float)) (min-z (:pointer float))
   (max-x (:pointer float)) (max-y (:pointer float)) (max-z (:pointer float)))
 
-
-;; int findNodes( NodeHandle startNode, const char *name, int type );
-(defh3fun ("findNodes" find-nodes) int
+;; int h3dFindNodes( H3DNode startNode, const char *name, int type );
+(defh3fun ("h3dFindNodes" find-nodes) int
   "Finds scene nodes with the specified properties.
 
 This function loops recursively over all children of startNode and adds them to
@@ -1758,18 +1240,19 @@ result list is cleared each time this function is called. The function returns
 the number of nodes which were found and added to the list.
 
 Parameters:
-        startNode       - handle to the node where the search begins
+        start-node      - handle to the node where the search begins
         name            - name of nodes to be searched (empty string for all nodes)
         type            - type of nodes to be searched (SceneNodeTypes::Undefined for all types)
 
 Returns:
         number of search results
 "
-  (start-node node-handle) (name string) (type node-type))
+  (start-node node)
+  (name string)
+  (type node-type))
 
-
-;; NodeHandle getNodeFindResult( int index );
-(defh3fun ("getNodeFindResult" get-node-find-result) node-handle
+;; H3DNode h3dGetNodeFindResult( int index );
+(defh3fun ("h3dGetNodeFindResult" get-node-find-result) node
   "Gets a result from the findNodes query.
 
 This function returns the n-th (index) result of a previous findNodes query. The
@@ -1786,8 +1269,9 @@ Returns:
   (index int))
 
 
-;; int castRay( NodeHandle node, float ox, float oy, float oz, float dx, float dy, float dz, int numNearest );
-(defh3fun ("castRay" cast-ray) int
+;; int h3dCastRay( H3DNode node, float ox, float oy, float oz,
+;;                 float dx, float dy, float dz, int numNearest );
+(defh3fun ("h3dCastRay" cast-ray) int
   "Performs a recursive ray collision query.
 
 This function checks recursively if the specified ray intersects the specified
@@ -1801,20 +1285,18 @@ Parameters:
         node            - node at which intersection check is beginning
         ox, oy, oz      - ray origin
         dx, dy, dz      - ray direction vector also specifying ray length
-        numNearest      - maximum number of intersection points to be stored (0 for all)
+        num-nearest     - maximum number of intersection points to be stored (0 for all)
 
 Returns:
         number of intersections
 "
-  (node node-handle)
+  (node node)
   (ox float) (oy float) (oz float)
   (dx float) (dy float) (dz float)
   (num-nearest int))
 
-
-
-;; bool getCastRayResult( int index, NodeHandle *node, float *distance, float *intersection );
-(defh3fun ("getCastRayResult" get-cast-ray-result) boolean
+;; bool h3dGetCastRayResult( int index, H3DNode *node, float *distance, float *intersection );
+(defh3fun ("h3dGetCastRayResult" get-cast-ray-result) boolean
   "Returns a result of a previous castRay query.
 
 This functions is used to access the results of a previous castRay query. The
@@ -1831,15 +1313,15 @@ Returns:
         true if index was valid and data could be copied, otherwise false
 "
   (index int)
-  (node (:pointer node-handle))
+  (node (:pointer node))
   (distance (:pointer float))
   (intersection (:pointer float)))
 
 
-;; DLL int checkNodeVisibility( NodeHandle node, NodeHandle cameraNode, bool checkOcclusion, bool calcLod );
+;; int h3dCheckNodeVisibility( H3DNode node, H3DNode cameraNode, bool checkOcclusion, bool calcLod );
 
-(defh3fun ("checkNodeVisibility" check-node-visibility) int
- "Checks if a node is visible.
+(defh3fun ("h3dCheckNodeVisibility" check-node-visibility) int
+  "Checks if a node is visible.
 
 This function checks if a specified node is visible from the perspective of a specified
 camera. The function always checks if the node is in the camera's frustum. If checkOcclusion
@@ -1851,19 +1333,23 @@ is not visible, otherwise 0 (base LOD level) or the computed LOD level.
 Parameters:
         node             - node to be checked for visibility
         camera-node      - camera node from which the visibility test is done
-        check-occlusion  - specifies if occlusion info from previous frame should be taken into account
+        occlusion-p      - specifies if occlusion info from previous frame should be taken into account
         calc-lod         - specifies if LOD level should be computed
 
 Returns:
         computed LOD level or -1 if node is not visible
 "
- (node node-handle) (camera-node node-handle) (check-occlusion boolean) (calc-lod boolean))
+  (node node)
+  (camera-node node)
+  (occlusion-p boolean)
+  (calc-lod boolean))
 
-;;;; Group: Group-specific scene graph functions 
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: Group-specific scene graph functions 
 
 
-;; NodeHandle addGroupNode( NodeHandle parent, const char *name );
-(defh3fun ("addGroupNode" add-group-node) node-handle
+;; H3DNode h3dAddGroupNode( H3DNode parent, const char *name );
+(defh3fun ("h3dAddGroupNode" add-group-node) node
   "Adds a Group node to the scene.
 
 This function creates a new Group node and attaches it to the specified parent
@@ -1876,32 +1362,37 @@ Parameters:
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name string))
+  (parent node)
+  (name string))
 
 
-;;;; Group: Model-specific scene graph functions 
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: Model-specific scene graph functions 
 
 
-;; NodeHandle addModelNode( NodeHandle parent, const char *name, ResHandle geometryRes );
-(defh3fun ("addModelNode" add-model-node) node-handle
+;; H3DNode h3dAddModelNode( H3DNode parent, const char *name, H3DRes geometryRes );
+(defh3fun ("h3dAddModelNode" add-model-node) node
   "Adds a Model node to the scene.
 
 This function creates a new Model node and attaches it to the specified parent
 node.
 
 Parameters:
-        parent          - handle to parent node to which the new node will be attached
-        name            - name of the node
-        geometryRes     - Geometry resource used by Model node
+        parent            - handle to parent node to which the new node will be attached
+        name              - name of the node
+        geometry-resource - Geometry resource used by Model node
 
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name string) (geometry-res resource-handle))
+  (parent node)
+  (name string)
+  (geometry-resource resource))
 
 
-;; bool setupModelAnimStage( NodeHandle modelNode, int stage, ResHandle animationRes, const char *startNode, bool additive );
-(defh3fun ("setupModelAnimStage" setup-model-anim-stage) boolean
+;; void h3dSetupModelAnimStage( H3DNode modelNode, int stage, H3DRes animationRes,
+;;                              int layer, const char *startNode, bool additive);
+(defh3fun ("h3dSetupModelAnimStage" setup-model-animation-stage) void
   "Configures an animation stage of a Model node.
 
 This function is used to setup the specified animation stage (channel) of the specified Model node.
@@ -1910,7 +1401,7 @@ The function is used for animation blending. There is a fixed number of
 stages (by default 16) on which different animations can be played. The start
 node determines the first node (Joint or Mesh) to which the animation is
 recursively applied. If the start node is an empty string, the animation affects
-all animatable nodes (Joints and Meshes) of the model. If a NULL-handle is used
+all animatable nodes (Joints and Meshes) of the model. If a NULL is used
 for animationRes, the stage is cleared and the previous animation is removed.
 
 A simple way to do animation mixing is using additive animations. If a stage is
@@ -1919,24 +1410,26 @@ current frame and the first frame in the animation and adds this delta to the
 current transformation of the joints or meshes.
 
 Parameters:
-        modelNode               - handle to the Model node to be modified
-        stage                   - index of the animation stage to be configured
-        animationRes    - handle to Animation resource (can be 0)
-        startNode               - name of first node to which animation shall be applied (or empty string)
-        additive                - flag indicating whether stage is additive
+        model-node          - handle to the Model node to be modified
+        stage               - index of the animation stage to be configured
+        animation-resource  - handle to Animation resource (can be 0)
+        layer               - layer id
+        start-node          - name of first node to which animation shall be applied (or empty string)
+        additive            - flag indicating whether stage is additive
 
 Returns:
-         true in case of success, otherwise false
+        nothing
 "
-  (model-node node-handle)
+  (model-node node)
   (stage int)
-  (animation-res resource-handle)
+  (animation-resource resource)
+  (layer int)
   (start-node string)
   (additive boolean))
 
 
-;; bool setModelAnimParams( NodeHandle modelNode, int stage, float time, float weight );
-(defh3fun ("setModelAnimParams" set-model-anim-params) boolean
+;; void h3dSetModelAnimParams( H3DNode modelNode, int stage, float time, float weight );
+(defh3fun ("h3dSetModelAnimParams" set-model-animation-parameters) void
   "Sets the parameters of an animation stage in a Model node.
 
 This function sets the current animation time and weight for a specified stage
@@ -1948,25 +1441,27 @@ stages. When the sum of the weights of all stages is more than one, the
 animations on the lower stages get priority.
 
 Parameters:
-        modelNode       - handle to the Model node to be modified
+        model-node      - handle to the Model node to be modified
         stage           - index of the animation stage to be modified
         time            - new animation time/frame
         weight          - new blend weight
 
 Returns:
-         true in case of success, otherwise false
+         nothing
 "
-  (model-node node-handle) (stage int) (time float) (weight float))
+  (model-node node)
+  (stage int)
+  (time float)
+  (weight float))
 
-
-;; bool setModelMorpher( NodeHandle modelNode, const char *target, float weight );
-(defh3fun ("setModelMorpher" set-model-morpher) boolean
+;; bool h3dSetModelMorpher( H3DNode modelNode, const char *target, float weight );
+(defh3fun ("h3dSetModelMorpher" set-model-morpher) boolean
   "Sets the weight of a morph target.
 
-This function sets the weight of a specified morph target. If the target
-parameter is an empty string the weight of all morph targets in the specified
-Model node is modified.  If the specified morph target is not found the function
-returns false.
+This function sets the weight of a specified morph target. If the
+target parameter is an empty string the weight of all morph targets in
+the specified Model node is modified.  If the specified morph target
+is not found the function returns false.
 
 Parameters:
         modelNode       - handle to the Model node to be modified
@@ -1974,64 +1469,73 @@ Parameters:
         weight          - new weight for morph target
 
 Returns:
-         true in case of success, otherwise false
+        true if morph target was found, otherwise false
 "
-  (model-node node-handle) (target string) (weight float))
+  (model-node node)
+  (target string)
+  (weight float))
+
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: Mesh-specific scene graph functions 
 
 
-;;;; Group: Mesh-specific scene graph functions 
-
-
-;; NodeHandle addMeshNode( NodeHandle parent, const char *name, ResHandle materialRes, int batchStart, int batchCount, int vertRStart, int vertREnd );
-(defh3fun ("addMeshNode" add-mesh-node) node-handle
+;; H3DNode h3dAddMeshNode( H3DNode parent, const char *name, H3DRes materialRes,
+;;                         int batchStart, int batchCount,
+;;                         int vertRStart, int vertREnd );
+(defh3fun ("h3dAddMeshNode" add-mesh-node) node
   "Adds a Mesh node to the scene.
 
 This function creates a new Mesh node and attaches it to the specified parent
 node.
 
 Parameters:
-        parent          - handle to parent node to which the new node will be attached
-        name            - name of the node
-        materialRes     - material resource used by Mesh node
-        batchStart      - first triangle index of mesh in Geometry resource of parent Model node
-        batchCount      - number of triangle indices used for drawing mesh
-        vertRStart      - first vertex in Geometry resource of parent Model node
-        vertREnd        - last vertex in Geometry resource of parent Model node
+        parent-node       - handle to parent node to which the new node will be attached
+        name              - name of the node
+        material-resource - material resource used by Mesh node
+        batch-start       - first triangle index of mesh in Geometry resource of parent Model node
+        batch-count       - number of triangle indices used for drawing mesh
+        vertex-rstart     - first vertex in Geometry resource of parent Model node
+        vertex-rend       - last vertex in Geometry resource of parent Model node
 
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name string)
-  (material-res resource-handle)
-  (batch-start int) (batch-count int)
-  (vert-r-start int) (vert-r-end int))
+  (parent-node node)
+  (name string)
+  (material-resource resource)
+  (batch-start int)
+  (batch-count int)
+  (vertex-r-start int)
+  (vertex-r-end int))
 
-;;;; Group: Joint-specific scene graph functions
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: Joint-specific scene graph functions
 
-
-;; NodeHandle addJointNode( NodeHandle parent, const char *name, int jointIndex );
-(defh3fun ("addJointNode" add-joint-node) node-handle
+;; H3DNode h3dAddJointNode( H3DNode parent, const char *name, int jointIndex );
+(defh3fun ("h3dAddJointNode" add-joint-node) node
   "Adds a Joint node to the scene.
 
 This function creates a new Joint node and attaches it to the specified parent
 node.
 
 Parameters:
-        parent          - handle to parent node to which the new node will be attached
+        parent-node     - handle to parent node to which the new node will be attached
         name            - name of the node
-        jointIndex      - index of joint in Geometry resource of parent Model node
+        joint-index     - index of joint in Geometry resource of parent Model node
 
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name string) (joint-index int))
+  (parent-node node)
+  (name string)
+  (joint-index int))
 
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: Light-specific scene graph functions 
 
-;;;; Group: Light-specific scene graph functions 
-
-
-;; NodeHandle addLightNode( NodeHandle parent, const char *name, ResHandle materialRes, const char *lightingContext, const char *shadowContext );
-(defh3fun ("addLightNode" add-light-node) node-handle
+;; H3DNode h3dAddLightNode( H3DNode parent, const char *name, H3DRes materialRes,
+;;                          const char *lightingContext, const char *shadowContext );
+(defh3fun ("h3dAddLightNode" add-light-node) node
   "Adds a Light node to the scene.
 
 This function creates a new Light node and attaches it to the specified parent
@@ -2044,177 +1548,160 @@ when rendering shadow maps or doing light calculations for orward rendering
 configurations.
 
 Parameters:
-        parent                  - handle to parent node to which the new node will be attached
-        name                    - name of the node
-        materialRes             - material resource for light configuration or 0 if not used
-        lightingContext - name of the shader context used for doing light calculations
-        shadowContext   - name of the shader context used for doing shadow map rendering
+        parent-node       - handle to parent node to which the new node will be attached
+        name              - name of the node
+        material-resource - material resource for light configuration or 0 if not used
+        lighting-context  - name of the shader context used for doing light calculations
+        shadow-context    - name of the shader context used for doing shadow map rendering
 
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name string)
-  (material-res resource-handle)
+  (parent-node node)
+  (name string)
+  (material-resource resource)
   (lighting-context string)
   (shadow-context string))
 
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: Camera-specific scene graph functions
 
-;; bool setLightContexts( NodeHandle lightNode, const char *lightingContext, const char *shadowContext );
-(defh3fun ("setLightContexts" set-light-contexts) boolean
-  "Sets the shader contexts used by a light source.
-
-This function sets the lighting and shadow shader contexts of the specified
-light source. The contexts define which shader code is used when doing lighting
-calculations or rendering the shadow map.
-
-Parameters:
-        lightNode               - handle to the Light node to be modified
-        lightingContext - name of the shader context used for performing lighting calculations
-        shadowContext   - name of the shader context used for rendering shadow maps
-
-Returns:
-         true in case of success otherwise false
-"
-  (light-node node-handle)
-  (lighting-context string)
-  (shadow-context string))
-
-;;;; Group: Camera-specific scene graph functions
-
-
-;; NodeHandle addCameraNode( NodeHandle parent, const char *name, ResHandle pipelineRes );
-(defh3fun ("addCameraNode" add-camera-node) node-handle
+;; H3DNode h3dAddCameraNode( H3DNode parent, const char *name, H3DRes pipelineRes );
+(defh3fun ("h3dAddCameraNode" add-camera-node) node
   "Adds a Camera node to the scene.
 
 This function creates a new Camera node and attaches it to the specified parent
 node.
 
 Parameters:
-        parent          - handle to parent node to which the new node will be attached
-        name            - name of the node
-        pipelineRes     - pipeline resource used for rendering
+        parent-node       - handle to parent node to which the new node will be attached
+        name              - name of the node
+        pipeline-resource - pipeline resource used for rendering
 
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle) (name string) (pipeline-res resource-handle))
+  (parent-node node)
+  (name string)
+  (pipeline-resource resource))
 
-
-;; bool setupCameraView( NodeHandle cameraNode, float fov, float aspect, float nearDist, float farDist );
-(defh3fun ("setupCameraView" setup-camera-view) boolean
+;; void h3dSetupCameraView( H3DNode cameraNode, float fov, float aspect,
+;;                          float nearDist, float farDist );
+(defh3fun ("h3dSetupCameraView" setup-camera-view) void
   "Sets the planes of a camera viewing frustum.
 
 This function calculates the view frustum planes of the specified camera node
 using the specified view arameters.
 
 Parameters:
-        cameraNode      - handle to the Camera node which will be modified
-        fov                     - field of view (FOV) angle
-        aspect          - aspect ratio
-        nearDist        - distance of near clipping plane
-        farDist         - distance of far clipping plane
+        camera-node   - handle to the Camera node which will be modified
+        fov           - field of view (FOV) angle
+        aspect        - aspect ratio
+        near-distance - distance of near clipping plane
+        far-distance  - distance of far clipping plane
 
 Returns:
-         true in case of success otherwise false
+         nothing
 "
-  (camera-node node-handle) (fov float)
-  (aspect float) (near-dist float)
-  (far-dist float))
+  (camera-node node)
+  (fov float)
+  (aspect float)
+  (near-distance float)
+  (far-distance float))
 
+;; void h3dGetCameraProjectionMat( H3DNode cameraNode, float *projMat );
+(defh3fun ("h3dGetCameraProjectionMat" get-camera-projection-matrix) void
+  "Gets the camera projection matrix.
 
-;; bool calcCameraProjectionMatrix( NodeHandle cameraNode, float *projMat );
-(defh3fun ("getCameraProjectionMatrix" get-camera-projection-matrix) boolean
-  "Calculates the camera projection matrix.
-
-This function calculates the camera projection matrix used for bringing the
+This function gets the camera projection matrix used for bringing the
 geometry to screen space and copies it to the specified array.
 
 Parameters:
-        cameraNode      - handle to Camera node
-        projMat         - pointer to float array with 16 elements
+        camera-node       - handle to Camera node
+        projection-matrix - pointer to float array with 16 elements
 
 Returns:
-         true in case of success otherwise false
+        nothing
 "
-  (camera-node node-handle)
-  (proj-mat (:pointer float)))
+  (camera-node node)
+  (projection-matrix (:pointer float)))
 
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: Emitter-specific scene graph functions
 
-;;;; Group: Emitter-specific scene graph functions
-
-
-;; NodeHandle addEmitterNode( NodeHandle parent, const char *name, ResHandle materialRes, ResHandle effectRes, int maxParticleCount, int respawnCount );
-(defh3fun ("addEmitterNode" add-emitter-node) node-handle
+;; H3DNode h3dAddEmitterNode( H3DNode parent, const char *name,
+;;                            H3DRes materialRes, H3DRes effectRes,
+;;                            int maxParticleCount, int respawnCount );
+(defh3fun ("h3dAddEmitterNode" add-emitter-node) node
   "Adds a Emitter node to the scene.
 
 This function creates a new Emitter node and attaches it to the specified parent
 node.
 
 Parameters:
-        parent           - handle to parent node to which the new node will be attached
-        name             - name of the node
-        materialRes      - handle to Material resource used for rendering
-        effectRes        - handle to Effect resource used for configuring particle properties
-        maxParticleCount - maximal number of particles living at the same time
-        respawnCount     - number of times a single particle is recreated after dying (-1 for infinite)
+        parent-node        - handle to parent node to which the new node will be attached
+        name               - name of the node
+        material-resource  - handle to Material resource used for rendering
+        effect-resource    - handle to Effect resource used for configuring particle properties
+        max-particle-count - maximal number of particles living at the same time
+        respawn-count      - number of times a single particle is recreated after dying (-1 for infinite)
 
 
 Returns:
          handle to the created node or 0 in case of failure
 "
-  (parent node-handle)
+  (parent-node node)
   (name string)
-  (material-res resource-handle)
-  (effect-res resource-handle)
+  (material-resource resource)
+  (effect-resource resource)
   (max-particle-count int)
   (respawn-count int))
 
-
-;; bool advanceEmitterTime( NodeHandle emitterNode, float timeDelta );
-(defh3fun ("advanceEmitterTime" advance-emitter-time) boolean
+;; void h3dAdvanceEmitterTime( H3DNode emitterNode, float timeDelta );
+(defh3fun ("h3dAdvanceEmitterTime" advance-emitter-time) void
   "Advances the time value of an Emitter node.
 
-This function advances the simulation time of a particle system and continues
-the particle simulation with timeDelta being the time elapsed since the last
-call of this function. The specified node must be an Emitter node.
+This function advances the simulation time of a particle system and
+continues the particle simulation with timeDelta being the time
+elapsed since the last call of this function. The specified node must
+be an Emitter node.
 
 Parameters:
-        emitterNode     - handle to the Emitter node which will be modified
-        timeDelta       - time delta in seconds
+        emitter-node - handle to the Emitter node which will be modified
+        time-delta   - time delta in seconds
 
 Returns:
          true in case of success otherwise false
 "
-  (emitter-node node-handle)
+  (emitter-node node)
   (time-delta float))
 
-
-;; bool hasEmitterFinished( NodeHandle emitterNode );
-(defh3fun ("hasEmitterFinished" has-emitter-finished) boolean
+;; bool h3dHasEmitterFinished( H3DNode emitterNode );
+(defh3fun ("h3dHasEmitterFinished" emitter-finished-p) boolean
   "Checks if an Emitter node is still alive.
 
-This function checks if a particle system is still active and has living
-particles or will spawn new particles. The specified node must be an Emitter
-node. The function can be used to check when a not infinitely running emitter
-for an effect like an explosion can be removed from the scene.
+This function checks if a particle system is still active and has
+living particles or will spawn new particles. The specified node must
+be an Emitter node. The function can be used to check when a not
+infinitely running emitter for an effect like an explosion can be
+removed from the scene.
 
 Parameters:
-        emitterNode     - handle to the Emitter node which is checked
+        emitter-node  - handle to the Emitter node which is checked
 
 Returns:
          true if Emitter will no more emit any particles, otherwise or in case of failure false
 "
-  (emitter-node node-handle))
+  (emitter-node node))
 
+;;;; -----------------------------------------------------------------------
+;;;; * Horde3D Utilities
 
-;;; Helper macro to define a horde3d utils API function and declare it inline.
-(defmacro defh3ufun ((cname lname) result-type &body body)
-  `(progn
-     (declaim (inline ,lname))
-     (defcfun (,cname ,lname :library horde3d-utils) ,result-type ,@body)))
+(defconstant +max-stat-mode+ 2
+  "Maximum stat mode number supported in show-frame-stats.")
 
-;; DLL void freeMem( char **ptr );
-(defh3ufun ("freeMem" free-mem) void
+;; void h3dutFreeMem( char **ptr );
+(defh3ufun ("h3dutFreeMem" free-mem) void
   "Frees memory allocated by the Utility Library.
                 
 This utility function frees the memory that was allocated by another function of the Utility Library.
@@ -2227,8 +1714,8 @@ Returns:
 "
   (ptr :pointer))
 
-;; bool dumpMessages();
-(defh3ufun ("dumpMessages" dump-messages) boolean
+;; bool h3dutDumpMessages();
+(defh3ufun ("h3dutDumpMessages" dump-messages) boolean
   "Writes all messages in the queue to a log file.
 
 This utility function pops all messages from the message queue and writes them
@@ -2241,11 +1728,11 @@ Returns:
         true in case of success, otherwise false
 ")
 
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: OpenGL-related functions 
 
-;;     /*    Group: OpenGL-related functions */
-
-;; bool initOpenGL( int hDC );
-(defh3ufun ("initOpenGL" init-open-gl) boolean
+;; bool h3dutInitOpenGL( int hDC );
+(defh3ufun ("h3dutInitOpenGL" init-open-gl) boolean
   "Initializes OpenGL.
 
 This utility function initializes an OpenGL rendering context in a specified
@@ -2260,9 +1747,8 @@ Returns:
 "
   (h-dc int))
 
-
-;; void releaseOpenGL();
-(defh3ufun ("releaseOpenGL" release-open-gl) void
+;; void h3dutReleaseOpenGL();
+(defh3ufun ("h3dutReleaseOpenGL" release-open-gl) void
   "Releases OpenGL.
 
 This utility function destroys the previously created OpenGL rendering context.
@@ -2275,9 +1761,8 @@ Returns:
         nothing
 ")
 
-
-;; void swapBuffers();
-(defh3ufun ("swapBuffers" swap-buffers) void
+;; void h3dutSwapBuffers();
+(defh3ufun ("h3dutSwapBuffers" swap-buffers) void
   "Displays the rendered image on the screen.
 
 This utility function displays the image rendered to the previously initialized
@@ -2291,12 +1776,11 @@ Returns:
         nothing
 ")
 
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: Resource management
 
-;;;; Group: Resource management
-
-
-;; const char *getResourcePath( int type );
-(defh3ufun ("getResourcePath" get-resource-path) string
+;; const char *h3dutGetResourcePath( int type );
+(defh3ufun ("h3dutGetResourcePath" get-resource-path) string
   "Returns  the search path of a resource type.
 
 This function returns the search path of a specified resource type.
@@ -2309,9 +1793,8 @@ Returns:
 "
   (type resource-type))
 
-
-;; void setResourcePath( int type, const char *path );
-(defh3ufun ("setResourcePath" set-resource-path) void
+;; void h3dutSetResourcePath( int type, const char *path );
+(defh3ufun ("h3dutSetResourcePath" set-resource-path) void
   "Sets the search path for a resource type.
 
 This function sets the search path for a specified resource type.
@@ -2323,11 +1806,11 @@ Parameters:
 Returns:
         nothing
 "
-  (type resource-type) (path string))
+  (type resource-type)
+  (path string))
 
-
-;; bool loadResourcesFromDisk( const char *contentDir );
-(defh3ufun ("loadResourcesFromDisk" load-resources-from-disk) boolean
+;; bool h3dutLoadResourcesFromDisk( const char *contentDir );
+(defh3ufun ("h3dutLoadResourcesFromDisk" load-resources-from-disk) boolean
   "Loads previously added resources from a data drive.
 
 This utility function loads previously added and still unloaded resources from
@@ -2345,9 +1828,9 @@ Returns:
   (content-dir string))
 
 
-;; bool createTGAImage( const unsigned char *pixels, int width, int height, int bpp,
-;;                      char **outData, int *outSize );
-(defh3ufun ("createTGAImage" create-tga-image) boolean
+;; bool h3dutCreateTGAImage( const unsigned char *pixels, int width, int height,
+;;                           int bpp, char **outData, int *outSize );
+(defh3ufun ("h3dutCreateTGAImage" create-tga-image) boolean
   "Creates a TGA image in memory.
 
 This utility function allocates memory at the pointer outData and creates a TGA
@@ -2357,14 +1840,14 @@ Texture2D or TexureCube resource in the engine.  *Note: The memory allocated by
 this routine has to freed manually using the freeMem function.*
 
 Parameters:
-        pixels  - pointer to pixel source data in BGR(A) format from which TGA-image is constructed;
-                  memory layout: pixel with position (x, y) in image (origin of image is upper left
-                                 corner) has memory location (y * width + x) * (bpp / 8) in pixels-array  
-        width   - width of source image
-        height  - height of source image
-        bpp     - color bit depth of source data (valid values: 24, 32)
-        outData - address of a pointer to which the address of the created memory block is written
-        outSize - variable to which to size of the created memory block is written
+        pixels    - pointer to pixel source data in BGR(A) format from which TGA-image is constructed;
+                    memory layout: pixel with position (x, y) in image (origin of image is upper left
+                    corner) has memory location (y * width + x) * (bpp / 8) in pixels-array  
+        width     - width of source image
+        height    - height of source image
+        bpp       - color bit depth of source data (valid values: 24, 32)
+        out-data  - address of a pointer to which the address of the created memory block is written
+        out-size  - variable to which to size of the created memory block is written
 
 Returns:
         false if at least one resource could not be loaded, otherwise true
@@ -2375,12 +1858,12 @@ Returns:
   (out-data :pointer)
   (out-size (:pointer int)))
 
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: Scene graph
 
-;;;; Group: Scene graph
-
-;; void pickRay( NodeHandle cameraNode, float nwx, float nwy,
+;; void h3dutPickRay( H3DNode cameraNode, float nwx, float nwy,
 ;;               float *ox, float *oy, float *oz, float *dx, float *dy, float *dz );
-(defh3ufun ("pickRay" pick-ray) void
+(defh3ufun ("h3dutPickRay" pick-ray) void
   "*      Calculates the ray originating at the specified camera and window coordinates
 
 This utility function takes normalized window coordinates (ranging from 0 to 1
@@ -2389,7 +1872,7 @@ origin and direction for the given camera. The function is especially useful for
 selecting objects by clicking on them.
 
 Parameters:
-        cameraNode    - camera used for picking
+        camera-node - camera used for picking
         nwx, nwy    - normalized window coordinates
         ox, oy, oz  - calculated ray origin
         dx, dy, dz  - calculated ray direction
@@ -2397,47 +1880,54 @@ Parameters:
 Returns:
         nothing
 "
-  (camera-node node-handle)
+  (camera-node node)
   (nwx float) (nwy float)
   (ox (:pointer float)) (oy (:pointer float)) (oz (:pointer float))
   (dx (:pointer float)) (dy (:pointer float)) (dz (:pointer float)))
 
 
-;; NodeHandle pickNode( NodeHandle cameraNode, float nwx, float nwy );
-(defh3ufun ("pickNode" pick-node) node-handle
+;; H3DNode h3dutPickNode( H3DNode cameraNode, float nwx, float nwy );
+(defh3ufun ("h3dutPickNode" pick-node) node
   "Returns the scene node which is at the specified window coordinates.
 
-This utility function takes normalized window coordinates (ranging from 0 to 1 with the
-origin being the bottom left corner of the window) and returns the scene node which is
-visible at that location. The function is especially useful for selecting objects by clicking
-on them. Currently picking is only working for Meshes.
+This utility function takes normalized window coordinates (ranging
+from 0 to 1 with the origin being the bottom left corner of the
+window) and returns the scene node which is visible at that
+location. The function is especially useful for selecting objects by
+clicking on them. Currently picking is only working for Meshes.
 
 Parameters:
-        cameraNode - camera used for picking
+        camera-node - camera used for picking
         nwx, nwy   - normalized window coordinates
 
 Returns:
         handle of picked node or 0 if no node was hit
 "
-  (camera-node node-handle) (nwx float) (nwy float))
+  (camera-node node)
+  (nwx float)
+  (nwy float))
 
-;;;; Group: Overlays
+;;;; ---------------------------------------------------------------------------
+;;;; * Group: Overlays
 
-;; DLL void showText( const char *text, float x, float y, float size,
+;; void h3dutShowText( const char *text, float x, float y, float size,
 ;;                    float colR, float colG, float colB,
-;;                    ResHandle fontMaterialRes, int layer );
+;;                    H3DRes fontMaterialRes, int layer );
 
-(defh3ufun ("showText" show-text) void
+(defh3ufun ("h3dutShowText" show-text) void
   "Shows text on the screen using a font texture.
 
-This utility function uses overlays to display a text string at a specified position on the screen.
-The font texture of the specified font material has to be a regular 16x16 grid containing all
-ASCII characters in row-major order. The layer corresponds to the layer parameter of overlays.
+This utility function uses overlays to display a text string at a
+specified position on the screen.  The font texture of the specified
+font material has to be a regular 16x16 grid containing all ASCII
+characters in row-major order. The layer corresponds to the layer
+parameter of overlays.
 
 Parameters:
         text                - text string to be displayed
-        x, y                - position of the lower left corner of the first character;
-                              for more details on coordinate system see overlay documentation
+        x, y                - position of the lower left corner of 
+                              the first character; for more details on coordinate 
+                              system see overlay documentation
         size                - size (scale) factor of the font
         col-r, col-g, col-b - font color
         font-material-res   - font material resource used for rendering
@@ -2446,283 +1936,36 @@ Parameters:
 Returns:
         nothing
 "
-  (text string) (x float) (y float) (size float)
-  (col-r float) (col-g float) (col-b float)
-  (font-material-res resource-handle) (layer int))
+  (text string)
+  (x float)
+  (y float)
+  (size float)
+  (col-r float)
+  (col-g float)
+  (col-b float)
+  (font-material-resource resource)
+  (layer int))
 
-
-;; void showFrameStats( ResHandle fontMaterialRes, ResHandle panelMaterialRes, int mode );
-(defh3ufun ("showFrameStats" show-frame-stats) void
+;; void h3dutShowFrameStats( H3DRes fontMaterialRes, H3DRes panelMaterialRes, int mode );
+(defh3ufun ("h3dutShowFrameStats" show-frame-statistics) void
   "Shows frame statistics on the screen.
 
-This utility function displays statistics for the current frame in the upper left corner of
-the screen. Since the statistic counters are reset after the call, it should be called exactly
-once per frame to obtain correct values.
+This utility function displays statistics for the current frame in the
+upper left corner of the screen. Since the statistic counters are
+reset after the call, it should be called exactly once per frame to
+obtain correct values.
 
 Parameters:
-        font-material-res  - font material resource used for drawing text
-        panel-material-res - material resource used for drawing info box
-        mode               - display mode, specifying which data is shown (<= MaxStatMode)
+        font-material-resource  - font material resource used for drawing text
+        panel-material-resource - material resource used for drawing info box
+        mode                    - display mode, specifying which data is shown 
+                                  (<= +max-stat-mode+)
 
 Returns:
         nothing
 "
-  (font-material-res resource-handle)
-  (panel-material-res resource-handle)
+  (font-material-resource resource)
+  (panel-material-resource resource)
   (mode int))
-
-;;;; Group: Terrain Extension
-
-;; NodeHandle addTerrainNode( NodeHandle parent, const char *name, ResHandle heightMapRes, ResHandle materialRes );
-(defh3fun ("addTerrainNode" add-terrain-node) node-handle
-  "Adds a Terrain node to the scene.
-                
-This function creates a new Terrain node and attaches it to the specified parent node.
-                
-Parameters:
-        parent     - handle to parent node to which the new node will be attached
-        name       - name of the node
-        height-map - handle to a Texture2D resource that contains the terrain height information (must be square and POT) 
-        material   - handle to the Material resource used for rendering the terrain
-
-Returns:
-         handle to the created node or 0 in case of failure
-"
-  (parent node-handle) (name string) (height-map resource-handle) (material resource-handle))
-
-;; ResHandle createGeometryResource( NodeHandle node, const char *resName, float meshQuality );
-(defh3fun ("createGeometryResource" create-geometry-resource) resource-handle
-  "Creates a Geometry resource from a specified Terrain node.
-                                
-This function creates a new Geometry resource that contains the vertex data of the specified Terrain node.
-To reduce the amount of data, it is possible to specify a quality value which controls the overall resolution
-of the terrain mesh. The algorithm will automatically create a higher resoultion in regions where the
-geometrical complexity is higher and optimize the vertex count for flat regions.
-
-Parameters:
-        node            - handle to terrain node that will be accessed
-        resName         - name of the Geometry resource that shall be created
-        meshQuality - constant controlling the overall mesh resolution
-        
-Returns:
-         handle to the created Geometry resource or 0 in case of failure
-"
-  (node node-handle) (res-name string) (mesh-quality float))
-
-
-;;;; Group: Sound Extension
-
-;;; Basic functions 
-
-(defh3fun ("openDevice" open-device) boolean
-  "Opens a sound device for playback.
-
-This function opens and initializes a sound device for playback. This needs to be called before
-any sound resources or nodes can be created or used. It will fail if another device is already
-open.
-
-Parameters:
-        device  - name of the device to open (use NULL for default device)
-
-Returns:
-        true in case of success, otherwise false
-"
-  (device string))
-
-
-(defh3fun ("closeDevice" close-device) void
-  "Closes the currently open sound device.
-
-This function closes the currently open sound device.
-
-Parameters:
-        none
-
-Returns:
-        nothing
-")
-
-
-(defh3fun ("getOpenDevice" get-open-device) string
-  "Gets the name of the currently open sound device.
-
-This function returns the name of the currently open sound device.
-
-Parameters:
-        none
-
-Returns:
-        name of the open device or NULL is none is open.
-")
-
-
-(defh3fun ("queryDevice" query-device) string
-  "Returns the name of a sound device.
-
-This function returns the name of a sound device from an internal list. If the index specified
-is greater than the number of the available sound devices, NULL is returned.
-
-Parameters:
-        index   - index of sound device within the internal list (starting with 0)
-
-Returns:
-        name of a sound device or NULL
-"
-          (index int))
-
-
-(defh3fun ("getDistanceModel" get-distance-model) distance-model
-  "Gets the active distance model.
-
-This function return the distance model used for calculating distance based attenuation.
-
-Parameters:
-        none
-
-Returns:
-        currently active distance model
-")
-
-
-(defh3fun ("setDistanceModel" set-distance-model) boolean
-  "Sets the active distance model.
-
-This function sets the distance model used for calculating distance based attenuation.
-
-Parameters:
-        model   - distance model to use
-
-Returns:
-        true if the distance model could be set, otherwise false
-"
-  (model distance-model))
-
-;;;; Group: Listener-specific scene graph functions 
-
-
-;;; NodeHandle addListenerNode( NodeHandle parent, const char *name );
-(defh3fun ("addListenerNode" add-listener-node) node-handle
-  "Adds a Listener node to the scene.
-
-This function creates a new Listener node and attaches it to the specified parent node.
-
-Parameters:
-        parent  - handle to parent node to which the new node will be attached
-        name    - name of the node
-
-Returns:
-         handle to the created node or 0 in case of failure
-"
-  (parent node-handle) (name string))
-
-
-;;; NodeHandle getActiveListener();
-(defh3fun ("getActiveListener" get-active-listener) node-handle
-  "Returns the handle of the active Listener node.
-
-This function returns the handle of the currently active Listener node.
-
-Parameters:
-        none
-
-Returns:
-        handle to active Listener node or 0 if there is no active Listener node
-")
-
-
-;;; bool setActiveListener( NodeHandle listenerNode );
-(defh3fun ("setActiveListener" set-active-listener) boolean
-  "Sets the active Listener node.
-
-This function sets the currently active Listener node. This node will act as the
-ears and all 3D sound calculations will be based on this node's position and orientation.
-
-Parameters:
-        listener-node   - handle to the Listener node.
-
-Returns:
-        true in case of success, otherwise false
-"
-  (listener-node node-handle))
-
-
-;;;; Group: Sound-specific scene graph functions 
-
-;;; NodeHandle addSoundNode( NodeHandle parent, const char *name, ResHandle soundRes );
-(defh3fun ("addSoundNode" add-sound-node) node-handle
-  "Adds a Sound node to the scene.
-
-This function creates a new Sound node and attaches it to the specified parent node.
-
-Parameters:
-        parent          - handle to parent node to which the new node will be attached
-        name            - name of the node
-        sound-resource  - handle to Sound resource which will be used for playback
-
-Returns:
-        handle to the created node or 0 in case of failure
-"
-  (parent node-handle) (name string) (sound-resource resource-handle))
-
-
-;;; bool isSoundPlaying( NodeHandle soundNode );
-(defh3fun ("isSoundPlaying" sound-playing-p) boolean
-  "Checks if an Sound node is playing.
-
-This function returns whether the Sound node is currently playing or not.
-
-Parameters:
-        sound-node - handle to the Sound node
-
-Returns:
-        true if the Sound node is currently playing, otherwise false
-"
-  (sound-node node-handle))
-
-
-;;; void playSound( NodeHandle soundNode );
-(defh3fun ("playSound" play-sound) void
-  "Starts the audio playback of a Sound node.
-
-This function will start the audio playback of a Sound node.
-
-Parameters:
-        sound-node - handle to the Sound node
-
-Returns:
-        nothing
-"
-  (sound-node node-handle))
-
-
-;;; void pauseSound( NodeHandle soundNode );
-(defh3fun ("pauseSound" pause-sound) void
-  "Pauses the playback of a Sound node.
-
-This function will pause the playback of a Sound node.
-
-Parameters:
-        sound-node - handle to the Sound node
-
-Returns:
-        nothing
-"
-  (sound-node node-handle))
-
-
-;;; void rewindSound( NodeHandle soundNode );
-(defh3fun ("rewindSound" rewind-sound) void
-  "Rewinds the playback of a Sound node.
-
-This function will rewind the playback of a Sound node. If the Sound node is
-playing while being rewinded it will continue to play from it's rewinded position.
-
-Parameters:
-        sound-node - handle to the Sound node
-
-Returns:
-        nothing
-"
-  (sound-node node-handle))
 
 ;;; bindings.lisp ends here

@@ -9,7 +9,7 @@
 ;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
 ;;; 
 
-(in-package :horde3d-cffi-binding)
+(in-package :horde3d-cffi)
 
 (define-foreign-library horde3d
   (:darwin (:framework "Horde3D"))

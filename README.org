@@ -1,0 +1,17 @@
+
+* Transformation principles
+  
+  - dropped h3d prefix and used a package instead
+  - lispified symbols
+  - dropped type suffices, in a dynamic typed language they make less
+    sense
+  - dropped Element suffixes (debatteable)
+  - adhered to the common-lisp tradition of not using abbreviations,
+    so I renamed
+    - 'res' to resource
+    - 'mat' to material (or matrix)
+    - 'vert' to vertex
+    - elem to element
+    - comp to component
+    - 
+    
