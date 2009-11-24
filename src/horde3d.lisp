@@ -78,7 +78,7 @@
                     max-num-messages
                     trilinear-filtering
                     max-anisotropy
-                    tex-compression
+                    texture-compression
                     load-textures
                     fast-animation
                     shadow-map-size
@@ -120,57 +120,12 @@
                %h3d:get-resource-element-count
                %h3d:find-resource-element)
 
-(defun resource-param-to-type (param)
-  (ecase param
-    (:geometry-index-count :int)
-    (:geometry-vertex-count :int)
-    (:geometry-indices-16 :int)
-
-    (:entity-frame-count :int) 
-
-    (:material-class :string)
-    (:material-link :int)
-    (:material-shader-resource :int)
-    (:material-sampler-name :string)
-    (:material-sampler-texture-resource :int)
-    (:material-uniform-name :string)
-    (:material-uniform-value :float)
-    
-    (:pixel-data :data)
-    (:tex-type :int)
-    (:tex-format :int)
-    (:width :int)
-    (:height :int)
-      
-    (:life-min :float)
-    (:life-max :float)
-    (:move-vel-min :float)
-    (:move-vel-max :float)
-    (:move-vel-end-rate :float)
-    (:rot-vel-min :float)
-    (:rot-vel-max :float)
-    (:rot-vel-end-rate :float)
-    (:size-min :float)
-    (:size-max :float)
-    (:size-end-rate :float)
-    (:col-r-min :float)
-    (:col-r-max :float)
-    (:col-r-end-rate :float)
-    (:col-g-min :float)
-    (:col-g-max :float)
-    (:col-g-end-rate :float)
-    (:col-b-min :float)
-    (:col-b-max :float)
-    (:col-b-end-rate :float)
-    (:col-a-min :float)
-    (:col-a-max :float)
-    (:col-a-end-rate :float)))
 
 (defun resource-parameter
     (resource element element-index parameter &optional (component-index 0)) 
-  (let ((return-type (resource-param-to-type parameter)))
+  (let ((return-type (%h3d:enum-type parameter)))
     (ecase return-type
-      (:int
+      ((:int :resource)
        (%h3d:get-resource-parameter-i resource element element-index parameter))
       (:float
        (%h3d:get-resource-parameter-f resource element element-index parameter component-index))
@@ -180,9 +135,9 @@
 (define-compiler-macro resource-parameter
     (&whole form resource element element-index parameter &optional (component-index 0))
   (if (keywordp parameter)
-      (let ((return-type (resource-param-to-type parameter)))
+      (let ((return-type (%h3d:enum-type parameter)))
         (ecase return-type
-          (:int
+          ((:int :resource)
            `(%h3d:get-resource-parameter-i ,resource ,element ,element-index ,parameter))
           (:float
            `(%h3d:get-resource-parameter-f ,resource ,element ,element-index ,parameter
@@ -221,9 +176,9 @@
       form))
 
 (defun set-resource-parameter (resource element element-index parameter component-index value)
-  (let ((type (resource-param-to-type parameter)))
+  (let ((type (%h3d:enum-type parameter)))
     (ecase type
-      (:int
+      ((:int :resource)
        (%h3d:set-resource-parameter-i resource element element-index parameter value))
       (:float
        (%h3d:set-resource-parameter-f resource element element-index parameter component-index value))
@@ -233,11 +188,11 @@
 
 (define-compiler-macro set-resource-parameter
     (&whole form resource element element-index parameter component-index value)
-  (if (keywordp param)
+  (if (keywordp parameter)
       (with-unique-names (val)
-        (let ((type (resource-param-to-type parameter)))
+        (let ((type (%h3d:enum-type parameter)))
           (ecase type
-            (:int
+            ((:int :resource)
              `(let ((,val ,value))
                 (%h3d:set-resource-parameter-i ,resource ,element ,element-index
                                                ,parameter ,component-index ,val) ,val))
@@ -302,76 +257,8 @@
                %h3d:get-node-transform-matrices
                %h3d:set-node-transform-matrix)
 
-(defun node-parameter-to-type (param)
-  (ecase param
-    ;; scene-node-params
-    (:node-name :string)
-    (:node-attachment :string)
-
-    ;; model-node-params
-    (:model-geometry-resource :resource)
-    (:model-software-skinning :int)
-    (:model-lod-dist-1 :float)
-    (:model-lod-dist-2 :float)
-    (:model-lod-dist-3 :float)
-    (:model-lod-dist-4 :float)
-
-    ;; mesh-node-params
-    (:mesh-material :resource)
-    (:batch-start :int)
-    (:batch-count :int)
-    (:vert-r-start :int)
-    (:vert-r-end :int)
-    (:lod-level :int)
-
-    ;; joint-node-params
-    (:joint-index :int)
-
-    ;; light-node-params
-    (:light-material :resource)
-    (:radius :float)
-    (:fov :float)
-    (:col-r :float)
-    (:col-g :float)
-    (:col-b :float)
-    (:shadow-map-count :int)
-    (:shadow-split-lambda :float)
-    (:shadow-map-bias :float)
-
-    ;; camera-node-params
-    (:pipeline :resource)
-    (:output-tex :resource)
-    (:output-buffer-index :int)
-    (:left-plane :float)
-    (:right-plane :float)
-    (:bottom-plane :float)
-    (:top-plane :float)
-    (:near-plane :float)
-    (:far-plane :float)
-    (:orthographic :int)
-    (:occlusion-culling :int)
-
-    ;; emitter-node-params
-    (:emitter-material :resource)
-    (:particle-effect-res :resource)
-    (:max-count :int)
-    (:respawn-count :int)
-    (:delay :float)
-    (:emission-rate :float)
-    (:spread-angle :float)
-    (:force-X :float)
-    (:force-Y :float)
-    (:force-Z :float)
-
-    ;; terrain-node-params
-    (:height-map-resource :resource)
-    (:terrain-material :resource)
-    (:mesh-quality :float)
-    (:skirt-height :float)
-    (:block-size :int)))
-
 (defun node-parameter (node parameter &key (component 0))
-  (let ((type (node-parameter-to-type parameter)))
+  (let ((type (%h3d:enum-type parameter)))
     (ecase type
       ((:int :resource)
        (%h3d:get-node-parameter-i node parameter))
@@ -382,7 +269,7 @@
 
 (define-compiler-macro node-parameter (&whole form node parameter &key (component 0))
   (if (keywordp parameter)
-      (let ((type (node-parameter-to-type parameter)))
+      (let ((type (%h3d:enum-type parameter)))
         (ecase type
           ((:int :resource)
            `(%h3d:get-node-parameter-i ,node ,parameter))
@@ -393,7 +280,7 @@
       form))
 
 (defun set-node-parameter (node parameter value &key (component 0))
-  (let ((type (node-parameter-to-type parameter)))
+  (let ((type (%h3d:enum-type parameter)))
     (ecase type
       ((:int :resource)
        (%h3d:set-node-parameter-i node parameter value))
@@ -406,7 +293,7 @@
 (define-compiler-macro set-node-parameter (&whole form node parameter value &key (component 0))
   (if (keywordp parameter)
       (with-unique-names (val)
-        (let ((type (node-parameter-to-type parameter)))
+        (let ((type (%h3d:enum-type parameter)))
           (ecase type
             ((:int :resource)
              `(let ((,val ,value))
@@ -419,8 +306,8 @@
                 (%h3d:set-node-parameter-str ,node ,parameter ,val) ,val)))))
       form))
 
-(defsetf node-parameter (node param) (store)
-  `(set-node-parameter ,node ,param ,store))
+(defsetf node-parameter (node param &key (component 0)) (store)
+  `(set-node-parameter ,node ,param ,store :component ,component))
 
 (defun get-node-aabb (node)
   (with-foreign-objects ((minx :float) (miny :float) (minz :float)
@@ -528,6 +415,16 @@
                            texture-cube
                            effect
                            pipeline)
+  (declare (ignore scene-graph
+                   geometry
+                   animation
+                   material
+                   code
+                   shader
+                   texture-2d
+                   texture-cube
+                   effect
+                   pipeline))
   (loop for (key . rest) on plist by #'cddr
      do (%h3d:set-resource-path key (car rest))))
 

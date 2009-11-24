@@ -500,7 +500,7 @@ Returns:
         number of elements
 "
   (resource resource)
-  (element resource-parameter))
+  (element resource-element))
 
 ;; int h3dFindResElem( H3DRes res, int elem, int param, const char *value );
 (defh3fun ("h3dFindResElem" find-resource-element) int
@@ -1072,8 +1072,8 @@ Returns:
         nothing
 "
   (node node)
-  (rel-mat (:pointer float))
-  (abs-mat (:pointer float)))
+  (rel-mat :pointer)
+  (abs-mat :pointer))
 
 ;; void h3dSetNodeTransMat( H3DNode node, const float *mat4x4 );
 (defh3fun ("h3dSetNodeTransMat" set-node-transform-matrix) void

@@ -117,6 +117,30 @@
 
 ;;;; Macros
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (let ((enum-types (make-hash-table)))
+    (defun enum-type (keyword)
+      (gethash keyword enum-types))
+    (defun notice-enum-type (keyword type)
+      (setf (gethash keyword enum-types) type)))
+  (defun emit-typed-enum-form (name enums)
+      (let ((e-values (loop for enum in enums by #'cddr collect enum))
+            (e-types (loop for (enum . rest) on enums by #'cddr
+                           collect (cons (if (listp enum)
+                                             (car enum)
+                                             enum)
+                                         (car rest))))
+            (i (gensym)))
+        `(progn
+           (eval-when (:compile-toplevel :load-toplevel :execute)
+             (dolist (,i ',e-types)
+               (notice-enum-type (car ,i) (cdr ,i))))
+           (defcenum ,name ,@e-values)))))
+
+(defmacro deftypedenum (name &body enum-values)
+  (when (and (stringp (car enum-values)) (cdr enum-values))
+    (pop enum-values))
+  (emit-typed-enum-form name enum-values))
 
 ;;; Helper macro to define a horde3d API function and declare it inline.
 (defmacro defh3fun ((cname lname) result-type &body body)

@@ -52,8 +52,8 @@
       (h3d:set-node-transform env 0 -20 0 0 0 0 20 20 20)
       (h3d:set-node-transform knight 0 0 0 0 180 0 0.1 0.1 0.1)
       
-      (h3d:setup-model-anim-stage knight 0 knight-anim-res-1 "" nil)
-      (h3d:setup-model-anim-stage knight 1 knight-anim-res-2 "" nil)
+      (h3d:setup-model-animation-stage knight 0 knight-anim-res-1 0 "" nil)
+      (h3d:setup-model-animation-stage knight 1 knight-anim-res-2 0 "" nil)
       
       ;; add particles to hand
       (h3d:find-nodes knight "Bip01_R_Hand" :joint)
@@ -64,13 +64,13 @@
   ;; Add light source
   (let ((light (h3d:add-light-node h3d:+root-node+ "Light1" 0 "LIGHTING" "SHADOWMAP")))
     (h3d:set-node-transform light 0 15 10 -60 0 0 1 1 1)
-    (setf (h3d:node-parameter light :radius) 30
-          (h3d:node-parameter light :fov) 90
-          (h3d:node-parameter light :shadow-map-count) 1
-          (h3d:node-parameter light :shadow-map-bias) 0.01
-          (h3d:node-parameter light :col-r) 1.0
-          (h3d:node-parameter light :col-g) 0.8
-          (h3d:node-parameter light :col-b) 0.7))
+    (setf (h3d:node-parameter light :light-radius) 30
+          (h3d:node-parameter light :light-fov) 90
+          (h3d:node-parameter light :light-shadow-map-count) 1
+          (h3d:node-parameter light :light-shadow-map-bias) 0.01
+          (h3d:node-parameter light :light-color :component 0) 1.0
+          (h3d:node-parameter light :light-color :component 1) 0.8
+          (h3d:node-parameter light :light-color :component 2) 0.7))
 
   ;; Customize post processing effects
   (let ((mat-res (h3d:find-resource :material "pipelines/postHDR.material.xml")))
@@ -100,12 +100,12 @@
   (unless (freeze? app)
     (let ((inv-fps (/ 1.0 (curr-fps app))))
       (incf (anim-time app) inv-fps)
-      (h3d:set-model-anim-params (knight-node app) 0
-                                 (* 24.0 (anim-time app))
-                                 (anim-weight app))
-      (h3d:set-model-anim-params (knight-node app) 1
-                                 (* 24.0 (anim-time app))
-                                 (- 1.0 (anim-weight app)))
+      (h3d:set-model-animation-parameters (knight-node app) 0
+                                          (* 24.0 (anim-time app))
+                                          (anim-weight app))
+      (h3d:set-model-animation-parameters (knight-node app) 1
+                                          (* 24.0 (anim-time app))
+                                          (- 1.0 (anim-weight app)))
 
       ;; candidate for a donodes macro
       (dotimes (i (h3d:find-nodes (particle-sys-node app) "" :emitter))
@@ -123,7 +123,7 @@
 
 
     (when (> (stat-mode app) 0)
-      (h3d:show-frame-stats font panel (stat-mode app))    
+      (h3d:show-frame-statistics font panel (stat-mode app))    
 
       ;; Display weight
       (h3d:show-text (format nil "Weight: ~a" (anim-weight app))

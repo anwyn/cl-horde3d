@@ -48,7 +48,7 @@
   (:method :before ((app example-application))
     (h3d:init)
     (h3d:set-options :load-textures 1
-                     :tex-compression 0
+                     :texture-compression 0
                      :fast-animation 0
                      :max-anisotropy 4
                      :shadow-map-size 2048)
@@ -90,9 +90,9 @@
   
   (:method ((app example-application) (key (eql :sdl-key-f3)))
     (with-accessors ((cam camera-node)) app
-      (if (eql (h3d:node-parameter cam :pipeline) (hdr-pipeline app))
-          (setf (h3d:node-parameter cam :pipeline) (fwd-pipeline app))
-          (setf (h3d:node-parameter cam :pipeline) (hdr-pipeline app)))))
+      (if (eql (h3d:node-parameter cam :camera-pipeline-resource) (hdr-pipeline app))
+          (setf (h3d:node-parameter cam :camera-pipeline-resource) (fwd-pipeline app))
+          (setf (h3d:node-parameter cam :camera-pipeline-resource) (hdr-pipeline app)))))
 
   (:method ((app example-application) (key (eql :sdl-key-f7)))
     (setf (show-debug-view? app) (not (show-debug-view? app))))
@@ -272,7 +272,8 @@ instance of a class derived from example-application."
             (setf fps (/ frames dt))
             (setf frames 0.0)
             (setf t0 time))))
-      (app-main-loop app fps))))
+      (setf (curr-fps app) (coerce fps 'single-float))
+      (app-main-loop app))))
 
 
 ;;; examples.lisp ends here

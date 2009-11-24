@@ -11,6 +11,9 @@
   (:shadow #:float #:boolean #:string)
   (:export
 
+   #:enum-type
+   #:notice-enum-type
+   
    ;; constants
    #:+root-node+
 
