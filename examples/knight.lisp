@@ -24,7 +24,7 @@
                                                   :initial-contents '(7.0 15.0 0.0))
                   :stat-mode 2
                   :anim-weight 0.0
-                  :content-path #p"/home/ole/src/graphics/Horde3D/Horde3D/Binaries/Content/")
+                  :content-path #p"/home/ole/src/graphics//Horde3D_SDK_1.0.0_Beta4/Horde3D/Binaries/Content/")
    :width 1280
    :height 800
    :caption "Knight - Horde3D Sample"))

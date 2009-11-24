@@ -13,6 +13,9 @@
 
    #:enum-type
    #:notice-enum-type
+
+   ;; conditions
+   #:no-such-enum-type
    
    ;; constants
    #:+root-node+

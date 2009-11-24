@@ -142,6 +142,12 @@
     (pop enum-values))
   (emit-typed-enum-form name enum-values))
 
+(define-condition no-such-enum-type (simple-error)
+  ((enum :initarg :enum :reader enum))
+  (:report (lambda (condition stream)
+             (format stream "There is no enum type associated with keyword ~A."
+                     (enum condition)))))
+
 ;;; Helper macro to define a horde3d API function and declare it inline.
 (defmacro defh3fun ((cname lname) result-type &body body)
   `(progn

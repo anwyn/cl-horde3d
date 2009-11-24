@@ -47,7 +47,8 @@
 
 (import-export resource
                node
-               %h3d:+root-node+)
+               %h3d:+root-node+
+               no-such-enum-type)
 
 ;;;; Enumerations
 
@@ -122,18 +123,18 @@
 
 
 (defun resource-parameter
-    (resource element element-index parameter &optional (component-index 0)) 
+    (resource element element-index parameter &key (component 0)) 
   (let ((return-type (%h3d:enum-type parameter)))
     (ecase return-type
       ((:int :resource)
        (%h3d:get-resource-parameter-i resource element element-index parameter))
       (:float
-       (%h3d:get-resource-parameter-f resource element element-index parameter component-index))
+       (%h3d:get-resource-parameter-f resource element element-index parameter component))
       (:string
        (%h3d:get-resource-parameter-str resource element element-index parameter)))))
 
 (define-compiler-macro resource-parameter
-    (&whole form resource element element-index parameter &optional (component-index 0))
+    (&whole form resource element element-index parameter &key (component 0))
   (if (keywordp parameter)
       (let ((return-type (%h3d:enum-type parameter)))
         (ecase return-type
@@ -141,7 +142,7 @@
            `(%h3d:get-resource-parameter-i ,resource ,element ,element-index ,parameter))
           (:float
            `(%h3d:get-resource-parameter-f ,resource ,element ,element-index ,parameter
-                                           ,component-index))
+                                           ,component))
           (:string
            `(%h3d:get-resource-parameter-str ,resource ,element ,element-index ,parameter))))
       form))
@@ -175,41 +176,43 @@
              (error "unknown data format")))
       form))
 
-(defun set-resource-parameter (resource element element-index parameter component-index value)
+(defun set-resource-parameter (resource element element-index parameter value &key (component 0))
   (let ((type (%h3d:enum-type parameter)))
     (ecase type
       ((:int :resource)
        (%h3d:set-resource-parameter-i resource element element-index parameter value))
       (:float
-       (%h3d:set-resource-parameter-f resource element element-index parameter component-index value))
+       (%h3d:set-resource-parameter-f resource element element-index parameter component value))
       (:string
        (%h3d:set-resource-parameter-str resource element element-index parameter value)))
     value))
 
 (define-compiler-macro set-resource-parameter
-    (&whole form resource element element-index parameter component-index value)
+    (&whole form resource element element-index parameter value &key (component 0))
   (if (keywordp parameter)
       (with-unique-names (val)
         (let ((type (%h3d:enum-type parameter)))
+          (when (null type)
+            (error 'no-such-enum-type :enum parameter))
           (ecase type
             ((:int :resource)
              `(let ((,val ,value))
                 (%h3d:set-resource-parameter-i ,resource ,element ,element-index
-                                               ,parameter ,component-index ,val) ,val))
+                                               ,parameter ,val) ,val))
             (:float
              `(let ((,val ,value))
                 (%h3d:set-resource-parameter-f ,resource ,element ,element-index
-                                               ,parameter ,component-index ,val) ,val))
+                                               ,parameter ,component ,val) ,val))
             (:string
              `(let ((,val ,value))
                 (%h3d:set-resource-parameter-str ,resource ,element ,element-index
-                                                 ,parameter ,component-index ,val) ,val)))))
+                                                 ,parameter ,val) ,val)))))
       form))
 
-(defsetf resource-parameter (resource element element-index parameter component-index)
+(defsetf resource-parameter (resource element element-index parameter &key (component 0))
     (store)
   `(set-resource-parameter ,resource ,element ,element-index
-                           ,parameter ,component-index ,store))
+                           ,parameter ,component ,store))
 
 (import-export %h3d:map-resource-stream
                %h3d:unmap-resource-stream
@@ -285,7 +288,7 @@
       ((:int :resource)
        (%h3d:set-node-parameter-i node parameter value))
       (:float
-       (%h3d:set-node-parameter-f node parameter value component))
+       (%h3d:set-node-parameter-f node parameter component value))
       (:string
        (%h3d:set-node-parameter-str node parameter value)))
     value))
