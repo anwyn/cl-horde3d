@@ -43,7 +43,11 @@
     (h3d:load-resources-from-disk (namestring (content-path app)))
 
     ;; add camera
-    (setf (camera-node app) (h3d:add-camera-node h3d:+root-node+ "Camera" (hdr-pipeline app)))
+    (setf (camera-node app) (h3d:add-camera-node h3d:+root-node+ "Camera"
+                                                 #+sbcl
+                                                 (fwd-pipeline app)
+                                                 #-sbcl
+                                                 (hdr-pipeline app)))
 
     (let ((env (h3d:add-nodes h3d:+root-node+ env-res))
           (knight (h3d:add-nodes h3d:+root-node+ knight-res)))
@@ -73,17 +77,12 @@
           (h3d:node-parameter light :light-color :component 2) 0.7))
 
   ;; Customize post processing effects
+  #-sbcl
   (let ((mat-res (h3d:find-resource :material "pipelines/postHDR.material.xml")))
     (h3d:set-material-uniform mat-res "hdrParams" 2.5 0.5 0.08 0))
 
   ;; Mark end of frame
   (h3d:finalize-frame))
-
-(defmethod app-resize ((app knight-application) width height)
-  (h3d:setup-viewport 0 0 width height t)
-  (h3d:setup-camera-view (camera-node app) 45.0
-                         (/ width height)
-                         0.1 1000.0))
 
 
 (defmethod app-main-loop ((app knight-application))

@@ -19,6 +19,7 @@
                (:module "examples"
                         :components ((:file "package")
                                      (:file "examples" :depends-on ("package"))
-                                     (:file "knight" :depends-on ("examples"))))))
+                                     (:file "knight" :depends-on ("examples"))
+                                     (:file "chicago" :depends-on ("examples"))))))
 
 

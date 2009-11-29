@@ -25,7 +25,7 @@
    
    (hdr-pipeline       :accessor hdr-pipeline       :initarg  :hdr-pipeline)
    (fwd-pipeline       :accessor fwd-pipeline       :initarg  :fwd-pipeline)
-   
+      
    (camera-node        :accessor camera-node        :initarg  :camera-node)
 
    (anim-time          :accessor anim-time          :initarg  :anim-time          :initform 0.0)
@@ -71,7 +71,13 @@
 
   (:method :after ((app example-application) width height)
            (setf (width app) width
-                 (height app) height)))
+                 (height app) height))
+  (:method ((app example-application) width height)
+    (h3d:setup-viewport 0 0 width height t)
+    (h3d:setup-camera-view (camera-node app) 45.0
+                           (/ width height)
+                           0.1 1000.0)))
+
 
 (defgeneric app-key-press-event (app key)
   (:documentation "Key handler")

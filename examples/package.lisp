@@ -13,6 +13,7 @@
 
 (defpackage #:horde3d-examples
   (:use #:common-lisp #:horde3d)
-  (:export #:knight))
+  (:export #:knight
+           #:chicago))
 
 ;;; package.lisp ends here

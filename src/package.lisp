@@ -113,7 +113,8 @@
 
    ;; lispification
    #:set-resource-paths
-   #:set-options))
+   #:set-options
+   #:add-resource))
 
 
 ;;; packages.lisp ends here

@@ -111,9 +111,9 @@
 (import-export %h3d:get-resource-type
                %h3d:get-resource-name
                %h3d:get-next-resource
-               %h3d:find-resource
-               %h3d:add-resource
-               %h3d:clone-resource
+               %h3d:find-resource)
+
+(import-export %h3d:clone-resource
                %h3d:remove-resource
                %h3d:resource-loaded-p
                %h3d:load-resource
@@ -121,6 +121,8 @@
                %h3d:get-resource-element-count
                %h3d:find-resource-element)
 
+(defun add-resource (type name &optional (flags 0))
+  (%h3d:add-resource type name flags))
 
 (defun resource-parameter
     (resource element element-index parameter &key (component 0)) 
