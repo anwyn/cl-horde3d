@@ -1,12 +1,5 @@
  ;;; -*- lisp -*-
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (unless (find-package '#:horde3d-system)
-    (defpackage #:horde3d-system
-      (:use :common-lisp :asdf))))
-
-(in-package #:horde3d-system)
-
 (defsystem :horde3d 
   :description "CFFI bindings for the Horde3D rendering engine." 
   :long-description "CFFI bindings for the Horde3D rendering engine." 

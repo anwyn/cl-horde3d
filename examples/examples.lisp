@@ -253,33 +253,4 @@ instance of a class derived from example-application."
                (app-main-loop app)
                (sdl:update-display))))))
 
-
-(defun get-real-time ()
-  (/ (get-internal-real-time) internal-time-units-per-second))
-
-
-(defun example-main-glfw (app &key (width 800) (height 600) (caption "Horde3D example"))
-  (let ((t0 (get-real-time))
-        (fps 30.0)
-        (frames 0))
-    (glfw:do-window (:title caption :width width :height height
-                            :redbits 8 :greenbits 8 :bluebits 8 :alphabits 8
-                            :depthbits 24 :stencilbits 8)
-        ((app-init app)
-         (app-resize app width height)
-         (push (lambda ()
-                 (app-release app))
-               glfw:*terminate-hooks*))
-      ;; render
-      (when (>= (incf frames) 3)
-        (let* ((time (get-real-time))
-               (dt (- time t0)))
-          (when (/= dt 0.0)
-            (setf fps (/ frames dt))
-            (setf frames 0.0)
-            (setf t0 time))))
-      (setf (curr-fps app) (coerce fps 'single-float))
-      (app-main-loop app))))
-
-
 ;;; examples.lisp ends here
