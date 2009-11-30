@@ -13,8 +13,8 @@
 (in-package :horde3d-examples)
 
 (defclass example-application ()
-  ((viewer-position    :accessor viewer-position    :initarg  :viewer-position    :initform (make-array 3 :initial-element 0.0))
-   (viewer-orientation :accessor viewer-orientation :initarg  :viewer-orientation :initform (make-array 2 :initial-element 0.0))
+  ((viewer-position    :accessor viewer-position    :initarg  :viewer-position    :initform (make-array 3 :initial-element 0.0 :element-type '(or null single-float)))
+   (viewer-orientation :accessor viewer-orientation :initarg  :viewer-orientation :initform (make-array 2 :initial-element 0.0 :element-type '(or null single-float)))
    (velocity           :accessor velocity           :initform 10.0)
    (keys               :accessor keys               :initform (make-hash-table))
    (modifiers          :accessor modifiers          :initform nil)
@@ -129,6 +129,11 @@
   (declare (type single-float angle))
   (the single-float (* angle (/ pi 180.0))))
 
+(declaim (inline radtodeg))
+(defun radtodeg (angle)
+  (declare (type single-float angle))
+  (the single-float (* angle (/ 180.0 pi))))
+
 (defun handle-movement (app)
   (let ((curr-vel (/ (velocity app) (curr-fps app))))
     (declare (type single-float curr-vel))
@@ -145,6 +150,7 @@
         (when (or w s)
           (let ((rx (degtorad (aref rot 0)))
                 (ry (degtorad (aref rot 1))))
+            (declare (type single-float rx ry))
             (when w
               (decf (aref pos 0) (coerce (* curr-vel (sin ry) (cos (- rx))) 'single-float))
               (decf (aref pos 1) (coerce (* curr-vel (sin (- rx))) 'single-float))
@@ -159,6 +165,7 @@
         (when (or a d)
           (let ((ry-90 (degtorad (- (aref rot 1) 90.0f0)))
                 (ry+90 (degtorad (+ (aref rot 1) 90.0f0))))
+            (declare (type single-float ry-90 ry+90))
             (when a
               (incf (aref pos 0) (coerce (* curr-vel (sin ry-90)) 'single-float))
               (incf (aref pos 2) (coerce (* curr-vel (cos ry-90)) 'single-float)))
