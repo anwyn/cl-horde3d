@@ -24,7 +24,8 @@
                                                   :initial-contents '(7.0 15.0 0.0))
                   :stat-mode 2
                   :anim-weight 0.0
-                  :content-path #p"/home/ole/src/graphics//Horde3D_SDK_1.0.0_Beta4/Horde3D/Binaries/Content/")
+                  :content-path (merge-pathnames (make-pathname :directory "Horde3D/Binaries/Content/")
+                                                 *horde3d-home-directory*))
    :width 800
    :height 600
    :caption "Knight - Horde3D Sample"))

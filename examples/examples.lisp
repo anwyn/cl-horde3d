@@ -12,6 +12,12 @@
 
 (in-package :horde3d-examples)
 
+(defparameter *horde3d-home-directory*
+  #p"/home/ole/src/graphics//Horde3D_SDK_1.0.0_Beta4/")
+
+;; (defparameter *horde3d-home-directory*
+;;   #p"/home/ole/src/graphics//Horde3D/")
+
 (defclass example-application ()
   ((viewer-position    :accessor viewer-position    :initarg  :viewer-position    :initform (make-array 3 :initial-element 0.0 :element-type '(or null single-float)))
    (viewer-orientation :accessor viewer-orientation :initarg  :viewer-orientation :initform (make-array 2 :initial-element 0.0 :element-type '(or null single-float)))
