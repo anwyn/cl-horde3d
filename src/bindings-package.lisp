@@ -11,9 +11,13 @@
   (:shadow #:float #:boolean #:string)
   (:export
 
+   ;; defines
    #:enum-type
    #:notice-enum-type
+   #:deftypedenum
+   #:defh3fun
 
+   
    ;; conditions
    #:no-such-enum-type
    
@@ -23,9 +27,15 @@
    ;; types
    #:resource
    #:node
+   #:boolean
+   #:float
+   #:string
+   #:int
+   #:void
    
    ;; enums
    #:option
+   #:statistics
    #:resource-type
    #:resource-flags
    #:resource-format

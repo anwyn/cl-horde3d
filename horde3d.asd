@@ -1,4 +1,4 @@
- ;;; -*- lisp -*-
+;;; -*- lisp -*-
 
 (defsystem :horde3d 
   :description "CFFI bindings for the Horde3D rendering engine." 
@@ -12,18 +12,24 @@
   :perform (test-op :after (op c)
                     (funcall (intern (string '#:horde3d-tests) '#:horde3d-test)))
   :components
-  ((:doc-file "README")
+  ((:doc-file "README.org")
+   (:doc-file "README.txt")
    (:static-file "horde3d.asd")
    (:module "src"
             :components
             ((:file "bindings-package")
              (:file "libraries" :depends-on ("bindings-package"))
              (:file "types" :depends-on ("libraries"))
-             (:file "enums" :depends-on ("types"))
+             (:file "terrain-bindings" :depends-on ("types"))
+             (:file "sound-bindings" :depends-on ("types"))
+             (:file "enums" :depends-on ("types" "terrain-bindings" "sound-bindings"))
              (:file "bindings" :depends-on ("enums"))
              ;; lispification
              (:file "package" :depends-on ("bindings-package"))
-             (:file "horde3d" :depends-on ("package" "bindings"))))))
+             (:file "horde3d" :depends-on ("package" "bindings"))
+             (:file "terrain" :depends-on ("horde3d"))
+             (:file "sound"   :depends-on ("horde3d"))
+             ))))
 
 (defsystem :horde3d-test
   :components ((:module "test"

@@ -1,23 +1,38 @@
-#+TITLE: CL-HORDE3D
-#+AUTHOR: Ole Arndt
-#+DESCRIPTION: A simple CFFI wrapper for the horde3d graphics engine.
-#+LANGUAGE:  en
-#+OPTIONS:   H:3 num:nil toc:t \n:nil @:t ::t |:t ^:nil -:t f:t *:t <:t
+                              CL-HORDE3D
+                              ==========
 
-* What is Horde3D?
+Author: Ole Arndt <ole@sugarshark.com>
+Date: 2009-12-04 02:19:46 CET
 
-  From the Horde3D website [[http://horde3d.org]]:
 
-#+BEGIN_QUOTE
-  Horde3D is a small open source 3D rendering engine. It is written in
-  an effort to create a graphics engine that offers the stunning
-  visual effects expected in next-generation games while at the same
-  time being as lightweight and conceptually clean as
-  possible. Horde3D has a simple and intuitive interface accessible
-  from virtually any programming language and is particularly suitable
-  for rendering large crowds of animated characters in next-generation
-  quality.
-#+END_QUOTE
+Table of Contents
+=================
+What is Horde3D? 
+What is CL-HORDE3D? 
+Dependencies 
+    Lisp Libraries 
+    Foreign libraries 
+Compatibility with different Horde3D versions 
+Compatibility with Lisps 
+Translating the Horde3D API from C to CL 
+Running the examples 
+
+
+What is Horde3D? 
+~~~~~~~~~~~~~~~~~
+
+  From the Horde3D website [http://horde3d.org]:
+
+ORG-BLOCKQUOTE-START
+Horde3D is a small open source 3D rendering engine. It is written in
+an effort to create a graphics engine that offers the stunning
+visual effects expected in next-generation games while at the same
+time being as lightweight and conceptually clean as
+possible. Horde3D has a simple and intuitive interface accessible
+from virtually any programming language and is particularly suitable
+for rendering large crowds of animated characters in next-generation
+quality.
+ORG-BLOCKQUOTE-END
 
   Horde3D is an OpenGL based graphics engine that does not use the
   fixed function pipeline but is built around the usage of shader
@@ -25,22 +40,28 @@
   hardware. It is a rather lean engine. Though it is written in C++,
   it exports a C API which can be easily wrapped with 
 
-* What is CL-HORDE3D?
+What is CL-HORDE3D? 
+~~~~~~~~~~~~~~~~~~~~
 
   A CFFI wrapper for the Horde3D library. Flashy 3D graphics with
   Lisp.
 
-* Dependencies
+Dependencies 
+~~~~~~~~~~~~~
 
-** Lisp Libraries
+Lisp Libraries 
+===============
    - CFFI
    - Lispbuilder-sdl (for the examples)
 
-** Foreign libraries
+Foreign libraries 
+==================
    - Horde3D
    - SDL (for the examples)
    
-* Compatibility with different Horde3D versions
+
+Compatibility with different Horde3D versions 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   cl-horde3d currently works together with the
   Horde3D_SDK_1.0.0-beta4. It should also run with the community svn
@@ -50,20 +71,23 @@
   contains an older version of cl-horde3d which should run with
   Horde3D 1.0.0 beta3.
   
-* Compatibility with Lisps
+
+Compatibility with Lisps 
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
   CL-HORDE3D should theoretically run on all lisps that CFFI supports.
   I tested cl-horde3d with the following lisps on a amd64 Gentoo
   Linux system:
 
-  - Clozure Common Lisp :: Works with 1.3 and 1.4.
-  - Clisp :: Works with 2.48
-  - SBCL :: Crashes in the foreign code. I suspect this has something
+  Clozure Common Lisp: Works with 1.3 and 1.4.
+  Clisp: Works with 2.48
+  SBCL: Crashes in the foreign code. I suspect this has something
             to do with SBCLs memory model.
   
   I would like to hear about success or failure with other lisps.
 
-* Translating the Horde3D API from C to CL
+Translating the Horde3D API from C to CL 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
   I chose to not translate the API literally, but to adjust the
   naming to the habits in the Common Lisp world. That's what I did:
@@ -82,7 +106,8 @@
     + 'comp' to 'component'
     + 'tex' to 'texture'
 
-* Running the examples
+Running the examples 
+~~~~~~~~~~~~~~~~~~~~~
   
   - Load the horde3d-examples system
 
