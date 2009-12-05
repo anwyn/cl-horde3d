@@ -95,7 +95,7 @@
    #:get-camera-projection-matrix
    #:add-emitter-node
    #:advance-emitter-time
-   #:has-emitter-finished
+   #:emitter-finished-p
 
    ;; Horde3d utilities
    #:dump-messages

@@ -149,34 +149,6 @@
            `(%h3d:get-resource-parameter-str ,resource ,element ,element-index ,parameter))))
       form))
 
-#+(or)
-(defun update-resource-data (handle param data &optional size)
-  (cond ((pointerp data)
-         (%h3d:update-resource-data handle param data size))
-        ((stringp data)
-         (with-foreign-string (str data)
-           (%h3d:update-resource-data handle param str (or size (length data)))))
-        ((vectorp data)
-         (with-pointer-to-vector-data (array data)
-           (%h3d:update-resource-data handle param array (or size (length data)))))
-        (t
-         (error "unknown data format"))))
-#+(or)
-(define-compiler-macro update-resource-data (&whole form handle param data &optional size)
-  (if (constantp data)
-      (cond ((pointerp data)
-             `(%h3d:update-resource-data ,handle ,param ,data ,size))
-            ((stringp data)
-             (with-unique-names (str)
-               `(with-foreign-string (,str ,data)
-                  (%h3d:update-resource-data ,handle ,param ,str (or ,size (cl:length ,data))))))
-            ((vectorp data)
-             (with-unique-names (array)
-               `(with-pointer-to-vector-data (,array ,data)
-                  (%h3d:update-resource-data ,handle ,param ,array (or ,size (cl:length ,data))))))
-            (t
-             (error "unknown data format")))
-      form))
 
 (defun set-resource-parameter (resource element element-index parameter value &key (component 0))
   (let ((type (%h3d:enum-type parameter)))
@@ -394,7 +366,7 @@
 
 (import-export %h3d:add-emitter-node
                %h3d:advance-emitter-time
-               %h3d:has-emitter-finished)
+               %h3d:emitter-finished-p)
 
 ;;;; Util Library
 

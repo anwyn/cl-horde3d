@@ -150,7 +150,7 @@
    ;; Emitter-specific scene graph functions
    #:add-emitter-node
    #:advance-emitter-time
-   #:has-emitter-finished
+   #:emitter-finished-p
 
    ;; Horde utils
 
