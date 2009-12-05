@@ -1162,7 +1162,7 @@ Parameters:
         value            - new value for the specified parameter
 
 Returns:
-         true in case of success otherwise false
+        nothing
 "
   (node node)
   (parameter node-parameter)
@@ -1203,7 +1203,7 @@ Parameters:
         value      - new value for the specified parameter
 
 Returns:
-         true in case of success otherwise false
+        nothing
 "
   (node node)
   (parameter node-parameter)

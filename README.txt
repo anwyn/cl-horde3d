@@ -1,67 +1,59 @@
                               CL-HORDE3D
                               ==========
 
-Author: Ole Arndt <ole@sugarshark.com>
-Date: 2009-12-04 02:19:46 CET
+Author: Ole Arndt <anwyn@sugarshark.com>
+Date: 2009-12-05 22:06:28 CET
 
 
-Table of Contents
-=================
-What is Horde3D? 
 What is CL-HORDE3D? 
-Dependencies 
-    Lisp Libraries 
-    Foreign libraries 
-Compatibility with different Horde3D versions 
-Compatibility with Lisps 
-Translating the Horde3D API from C to CL 
-Running the examples 
+====================
 
+  A CFFI[1] wrapper for the Horde3D library. Display flashy 3D graphics
+  with Common Lisp.
 
 What is Horde3D? 
-~~~~~~~~~~~~~~~~~
+=================
 
-  From the Horde3D website [http://horde3d.org]:
+  From the Horde3D[2] website:
 
-ORG-BLOCKQUOTE-START
-Horde3D is a small open source 3D rendering engine. It is written in
-an effort to create a graphics engine that offers the stunning
-visual effects expected in next-generation games while at the same
-time being as lightweight and conceptually clean as
-possible. Horde3D has a simple and intuitive interface accessible
-from virtually any programming language and is particularly suitable
-for rendering large crowds of animated characters in next-generation
-quality.
-ORG-BLOCKQUOTE-END
+  Horde3D is a small open source 3D rendering engine. It is written in
+  an effort to create a graphics engine that offers the stunning
+  visual effects expected in next-generation games while at the same
+  time being as lightweight and conceptually clean as
+  possible. Horde3D has a simple and intuitive interface accessible
+  from virtually any programming language and is particularly suitable
+  for rendering large crowds of animated characters in next-generation
+  quality.
+
 
   Horde3D is an OpenGL based graphics engine that does not use the
   fixed function pipeline but is built around the usage of shader
   programs. It only runs on OpenGL 2.0 compatible graphics
   hardware. It is a rather lean engine. Though it is written in C++,
-  it exports a C API which can be easily wrapped with 
-
-What is CL-HORDE3D? 
-~~~~~~~~~~~~~~~~~~~~
-
-  A CFFI wrapper for the Horde3D library. Flashy 3D graphics with
-  Lisp.
+  it exports a C API which can be easily wrapped.
 
 Dependencies 
-~~~~~~~~~~~~~
+=============
 
 Lisp Libraries 
-===============
+---------------
    - CFFI
-   - Lispbuilder-sdl (for the examples)
+   - Lispbuilder-sdl[3] (for the examples)
 
 Foreign libraries 
-==================
+------------------
    - Horde3D
-   - SDL (for the examples)
+   - SDL[4] (for the examples)
    
 
-Compatibility with different Horde3D versions 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+License 
+========
+  
+  To make things easy, CL-HORDE3D is published under the same license
+  as Horde3D: The Eclipse Public License - v 1.0.[5]
+
+Compatibility with different Horde3D Versions 
+==============================================
 
   cl-horde3d currently works together with the
   Horde3D_SDK_1.0.0-beta4. It should also run with the community svn
@@ -73,32 +65,43 @@ Compatibility with different Horde3D versions
   
 
 Compatibility with Lisps 
-~~~~~~~~~~~~~~~~~~~~~~~~~
+=========================
 
   CL-HORDE3D should theoretically run on all lisps that CFFI supports.
   I tested cl-horde3d with the following lisps on a amd64 Gentoo
   Linux system:
 
   Clozure Common Lisp: Works with 1.3 and 1.4.
+
   Clisp: Works with 2.48
+
   SBCL: Crashes in the foreign code. I suspect this has something
-            to do with SBCLs memory model.
+       to do with SBCLs memory model, failed allocations and no
+       checks. The knight example did run with Horde3D beta3, but only
+       without HDR (which means a big render target buffer).  I need
+       to look into this further.
   
-  I would like to hear about success or failure with other lisps.
+  I would like to hear about success or failure with other lisps and
+  operating systems.
 
 Translating the Horde3D API from C to CL 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=========================================
   
-  I chose to not translate the API literally, but to adjust the
+  I have chosen to not translate the API literally, but to adjust the
   naming to the habits in the Common Lisp world. That's what I did:
 
   - I dropped the h3d prefix from all names and used a common lisp package instead.
+
   - I dropped all type suffixes from enum- and function names, in a
     dynamic typed language they make less sense.
-  - I `lispified' all symbols (downcases and hyphens instead of camel case)
-  - I dropped all -Element suffixes from enums (debateable)
+
+  - I `lispified' all symbols (lower case with hyphens instead of camel case)
+
+  - I dropped all -Element suffixes from the enumerations (debatable)
+
   - I adhered to the common-lisp tradition of not using abbreviations,
     so I renamed all occurrences of
+
     + 'res' to resource
     + 'mat' to 'material' (or 'matrix')
     + 'vert' to 'vertex'
@@ -106,13 +109,42 @@ Translating the Horde3D API from C to CL
     + 'comp' to 'component'
     + 'tex' to 'texture'
 
-Running the examples 
-~~~~~~~~~~~~~~~~~~~~~
+Horde3D Extensions 
+===================
   
-  - Load the horde3d-examples system
+  There is code in CL-HORDE3D for the terrain and the sound
+  extension, but it is totally untested and might not run at all. It
+  is therefore disabled by default. The organization of source files
+  for the extension will very likely change in the near future.
 
-  - adjust the *horde3d-home-directory* variable in src/examples.lisp
-    to point to your Horde3D installation.
+Running the examples 
+=====================
 
-  - run (horde3d-examples:knight) or (horde3d-examples:chicago)
+  - Make sure you have Horde3D installed and that you can run the
+    example binaries that come with it.
+
+  - Install Lispbuilder SDL.
+
+  - For now you have to adjust the *horde3d-home-directory* variable
+    in src/examples.lisp to point to your Horde3D installation. The
+    examples will load resources from there.
+
+  - Load the horde3d-examples system with asdf.
+
+  - run (horde3d-examples:knight) or (horde3d-examples:chicago) from
+    the REPL. The example programs should have the same controls
+    available as the original examples, but the mouse is not captured.
+
+
+
+
+[1] [http://common-lisp.net/project/cffi]
+
+[2] [http://horde3d.org]
+
+[3] [http://code.google.com/p/lispbuilder/wiki/LispbuilderSDL]
+
+[4] [http://www.libsdl.org]
+
+[5] [http://www.eclipse.org/legal/epl-v10.html]
 

@@ -6,7 +6,7 @@
   :version "0.1"
   :author "Ole Arndt <ole@sugarshark.com>"
   :maintainer "Ole Arndt <ole@sugarshark.com>"
-  :licence "LGPL"
+  :licence "EPL 1.0"
   :depends-on (:cffi)
   :in-order-to ((test-op (load-op :horde3d-test)))
   :perform (test-op :after (op c)
@@ -20,15 +20,16 @@
             ((:file "bindings-package")
              (:file "libraries" :depends-on ("bindings-package"))
              (:file "types" :depends-on ("libraries"))
-             (:file "terrain-bindings" :depends-on ("types"))
-             (:file "sound-bindings" :depends-on ("types"))
-             (:file "enums" :depends-on ("types" "terrain-bindings" "sound-bindings"))
+             ;; (:file "terrain-bindings" :depends-on ("types"))
+             ;; (:file "sound-bindings" :depends-on ("types"))
+             ;; (:file "enums" :depends-on ("types" "terrain-bindings" "sound-bindings"))
+             (:file "enums" :depends-on ("types"))
              (:file "bindings" :depends-on ("enums"))
              ;; lispification
              (:file "package" :depends-on ("bindings-package"))
              (:file "horde3d" :depends-on ("package" "bindings"))
-             (:file "terrain" :depends-on ("horde3d"))
-             (:file "sound"   :depends-on ("horde3d"))
+             ;; (:file "terrain" :depends-on ("horde3d"))
+             ;; (:file "sound"   :depends-on ("horde3d"))
              ))))
 
 (defsystem :horde3d-test
