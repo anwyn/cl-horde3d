@@ -312,6 +312,13 @@
 
 ;;; Lispification
 
+(defmacro do-nodes ((node &key (node-name "") (node-type :undefined) (start-node +root-node+))
+                    &body body)
+  (with-unique-names (index)
+    `(dotimes (,index (find-nodes ,start-node ,node-name ,node-type))
+       (let ((,node (get-node-find-result ,index)))
+         ,@body))))
+
 (defmacro do-ray-cast ((node origin direction &key (max-results 0))
                        (rnode distance intersection) &body body)
   (with-unique-names (index orig dir point)

@@ -107,9 +107,8 @@
                                           (* 24.0 (anim-time app))
                                           (- 1.0 (anim-weight app)))
 
-      ;; candidate for a donodes macro
-      (dotimes (i (h3d:find-nodes (particle-sys-node app) "" :emitter))
-        (h3d:advance-emitter-time (h3d:get-node-find-result i) inv-fps))))
+      (h3d:do-nodes (node :start-node (particle-sys-node app) :node-type :emitter)
+        (h3d:advance-emitter-time node inv-fps))))
   
   ;; Set camera parameters
   

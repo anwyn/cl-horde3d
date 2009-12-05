@@ -114,7 +114,9 @@
    ;; lispification
    #:set-resource-paths
    #:set-options
-   #:add-resource))
+   #:add-resource
+   #:do-nodes
+   #:do-ray-cast))
 
 
 ;;; packages.lisp ends here
