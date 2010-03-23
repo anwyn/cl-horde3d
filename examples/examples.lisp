@@ -211,11 +211,11 @@ instance of a class derived from example-application."
                 :title-caption caption
                 :icon-caption caption)
 
-    (setf (sdl:frame-rate) 0)
-    (sdl:enable-unicode)
-
     (app-init app)
     (app-resize app width height)
+
+    (setf (sdl:frame-rate) 0)
+    (sdl:enable-unicode)
 
     (let ((frames 0)
           (fps 100.0)
