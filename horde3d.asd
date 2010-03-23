@@ -1,8 +1,8 @@
 ;;; -*- lisp -*-
 
-(defsystem :horde3d 
-  :description "CFFI bindings for the Horde3D rendering engine." 
-  :long-description "CFFI bindings for the Horde3D rendering engine." 
+(defsystem :horde3d
+  :description "CFFI bindings for the Horde3D rendering engine."
+  :long-description "CFFI bindings for the Horde3D rendering engine."
   :version "0.1"
   :author "Ole Arndt <ole@sugarshark.com>"
   :maintainer "Ole Arndt <ole@sugarshark.com>"
@@ -13,7 +13,6 @@
                     (funcall (intern (string '#:horde3d-tests) '#:horde3d-test)))
   :components
   ((:doc-file "README.org")
-   (:doc-file "README.txt")
    (:static-file "horde3d.asd")
    (:module "src"
             :components
