@@ -126,9 +126,9 @@
 
 * Footnotes
 
-[fn:1] http://common-lisp.net/project/cffi
-[fn:2] [[http://horde3d.org]]
-[fn:3] http://code.google.com/p/lispbuilder/wiki/LispbuilderSDL
-[fn:4] http://www.libsdl.org
-[fn:5] http://www.eclipse.org/legal/epl-v10.html
+- [fn:1] http://common-lisp.net/project/cffi
+- [fn:2] [[http://horde3d.org]]
+- [fn:3] http://code.google.com/p/lispbuilder/wiki/LispbuilderSDL
+- [fn:4] http://www.libsdl.org
+- [fn:5] http://www.eclipse.org/legal/epl-v10.html
 
