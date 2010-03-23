@@ -1,13 +1,13 @@
 ;;; types.lisp --- cffi types for the horde3d lisp bindings
-;;;  _                         
-;;; | |_ _   _ _ __   ___  ___ 
+;;;  _
+;;; | |_ _   _ _ __   ___  ___
 ;;; | __| | | | '_ \ / _ \/ __|
 ;;; | |_| |_| | |_) |  __/\__ \
 ;;;  \__|\__, | .__/ \___||___/
-;;;      |___/|_|              
+;;;      |___/|_|
 ;;;
 ;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
-;;; 
+;;;
 
 (in-package :horde3d-cffi)
 

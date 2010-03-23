@@ -1,13 +1,13 @@
 ;;; horde3d.lisp --- lispification for the horde3d wrapper
-;;;  _                   _      _____     _ 
+;;;  _                   _      _____     _
 ;;; | |__   ___  _ __ __| | ___|___ /  __| |
 ;;; | '_ \ / _ \| '__/ _` |/ _ \ |_ \ / _` |
 ;;; | | | | (_) | | | (_| |  __/___) | (_| |
 ;;; |_| |_|\___/|_|  \__,_|\___|____/ \__,_|
-                                        
+
 ;;;
 ;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
-;;; 
+;;;
 
 (in-package :horde3d)
 
@@ -56,13 +56,23 @@
 
 (import-export %h3d:get-version-string
                %h3d:check-extension
-               %h3d:get-error
-               %h3d:init
-               %h3d:release
-               %h3d:setup-viewport
+               %h3d:get-error)
+
+(defun init ()
+  ;; (load-foreign-library '%h3d:horde3d)
+  ;; (load-foreign-library '%h3d:horde3d-utils)
+  (%h3d:init))
+
+(defun release ()
+  ;; (close-foreign-library '%h3d:horde3d-utils)
+  ;; (close-foreign-library '%h3d:horde3d)
+  (%h3d:release))
+
+(import-export %h3d:setup-viewport
                %h3d:render
                %h3d:finalize-frame
                %h3d:clear)
+
 
 (defun get-message ()
   (with-foreign-objects ((level :int)
@@ -125,7 +135,7 @@
   (%h3d:add-resource type name flags))
 
 (defun resource-parameter
-    (resource element element-index parameter &key (component 0)) 
+    (resource element element-index parameter &key (component 0))
   (let ((return-type (%h3d:enum-type parameter)))
     (ecase return-type
       ((:int :resource)
@@ -336,18 +346,18 @@
 
 (import-export %h3d:check-node-visibility)
 
-;;;; Group-specific scene graph functions 
+;;;; Group-specific scene graph functions
 
 (import-export %h3d:add-group-node)
 
-;;;; Model-specific scene graph functions 
+;;;; Model-specific scene graph functions
 
 (import-export %h3d:add-model-node
                %h3d:setup-model-animation-stage
                %h3d:set-model-animation-parameters
                %h3d:set-model-morpher)
 
-;;;; Mesh-specific scene graph functions 
+;;;; Mesh-specific scene graph functions
 
 (import-export %h3d:add-mesh-node)
 
@@ -355,7 +365,7 @@
 
 (import-export %h3d:add-joint-node)
 
-;;;; Light-specific scene graph functions 
+;;;; Light-specific scene graph functions
 
 (import-export %h3d:add-light-node)
 

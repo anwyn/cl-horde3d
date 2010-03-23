@@ -51,7 +51,7 @@ Returns:
 ;; bool h3dGetError();
 (defh3fun ("h3dGetError" get-error) boolean
   "Checks if an error occured.
-	
+
 This function checks if an error occured in a previous API function
 call. If an error flag is set, the function resets the flag and
 returns true. The function will solely report errors that originate
@@ -62,16 +62,16 @@ missing hardware feature, can be catched by checking the return value
 of the corresponding API function.  More information about the error
 can be retrieved by checking the message queue, provided that the
 message level is set accordingly.
-	
+
 Parameters:
 	none
-	
+
 Returns:
 	true in there was an error, otherwise false
 ")
 
 ;; void h3dInit();
-(defh3fun ("h3dInit" init) void
+(defh3fun ("h3dInit" init) boolean
   "Initializes the engine.
 
   This function initializes the graphics engine and makes it ready for use. It has
@@ -104,22 +104,22 @@ Returns:
 ;; void h3dSetupViewport( int x, int y, int width, int height, bool resizeBuffers);
 (defh3fun ("h3dSetupViewport" setup-viewport) void
   "Sets the location and size of the viewport.
-                
+
   This function sets the location and size of the viewport. It has to be called
   after engine initialization and whenever the size of the rendering context/window
   changes. The resizeBuffers parameter specifies whether render targets with a size
   relative to the viewport dimensions should be resized. This is usually desired
   after engine initialization and when the window is resized but not for just rendering
   to a part of the framebuffer.
-   
-   
+
+
   Parameters:
           x              - the x-position of the lower left corner of the viewport rectangle
           y              - the y-position of the lower left corner of the viewport rectangle
           width          - the width of the viewport
           height         - the height of the viewport
           resizeBuffers  - specifies whether render targets should be adapted to new size
-          
+
   Returns:
           nothing
 "
@@ -128,7 +128,7 @@ Returns:
 
 
 ;; bool h3dRender( H3DNode cameraNode );
-(defh3fun ("h3dRender" render) boolean
+(defh3fun ("h3dRender" render) void
   "Main rendering function.
 
   This is the main function of the engine. It executes all the rendering,
@@ -139,7 +139,7 @@ Returns:
           cameraNode      - camera node used for rendering scene
 
   Returns:
-          true in case of success, otherwise false
+          nothing
 "
   (camera-node node))
 
@@ -147,13 +147,13 @@ Returns:
 ;; bool h3dFinalizeFrame();
 (defh3fun ("h3dFinalizeFrame" finalize-frame) void
   "Marker for end of frame.
-                
+
 This function tells the engine that the current frame is finished and that all
 subsequent rendering operations will be for the next frame.
-                
+
 Parameters:
         none
-                        
+
 Returns:
         nothing
 ")
@@ -247,7 +247,7 @@ Returns:
 ;;                          H3DRes materialRes, int layer );
 (defh3fun ("h3dShowOverlay" show-overlay) void
   "Shows an overlay on the screen.
-                
+
 This function displays an overlay with a specified material at a specified position on the screen.
 An overlay is a 2D image that can be used to render 2D GUI elements. The coordinate system
 used has its origin (0, 0) at the top-left corner of the screen and its maximum (1, 1) at
@@ -265,7 +265,7 @@ Parameters:
         col-r, col-g, col-b, col-a  - color of the overlay that is set for the material's shader
         material-resource           - material resource used for rendering
         layer                       - layer index of the overlay (Values: from 0 to 7)
-        
+
 Returns:
         nothing
 "
@@ -331,17 +331,17 @@ Returns:
 ;; H3DRes h3dGetNextResource( int type, H3DRes start );
 (defh3fun ("h3dGetNextResource" get-next-resource) resource
   "Returns the next resource of the specified type.
-                
+
 This function searches the next resource of the specified type and returns its handle.
 The search begins after the specified start handle. If a further resource of the queried type
 does not exist, a zero handle is returned. The function can be used to iterate over all
 resources of a given type by using as start the return value of the previous iteration step.
 The first iteration step should start at 0 and iteration can be ended when the function returns 0.
-                
+
 Parameters:
         type   - type of resource to be searched (ResourceTypes::Undefined for all types)
         start  - resource handle after which the search begins (can be 0 for beginning of resource list)
-                        
+
 Returns:
         handle to the found resource or 0 if it does not exist
 "
@@ -488,14 +488,14 @@ Returns:
 ;; int h3dGetResElemCount( H3DRes res, int elem );
 (defh3fun ("h3dGetResElemCount" get-resource-element-count) int
   "Gets the number of elements in a resource.
-        
+
 This function returns how many elements of the specified element type
 a specified resource has.
 
 Parameters:
         resource - handle to the resource to be accessed
         element  - element type
-        
+
 Returns:
         number of elements
 "
@@ -505,7 +505,7 @@ Returns:
 ;; int h3dFindResElem( H3DRes res, int elem, int param, const char *value );
 (defh3fun ("h3dFindResElem" find-resource-element) int
   "Finds a resource element with the specified property value.
-        
+
 This function searches in a specified resource for the first element
 of the specified type that has the property with the specified name
 set to the specified search value.  If such element is found, its
@@ -517,7 +517,7 @@ Parameters:
         element    - element type
         parameter  - parameter name
         value      - parameter value to be searched for
-        
+
 Returns:
         index of element or -1 if element not found
 "
@@ -670,7 +670,7 @@ Returns:
 ;; void *h3dMapResStream( H3DRes res, int elem, int elemIdx, int stream, bool read, bool write );
 (defh3fun ("h3dMapResStream" map-resource-stream) :pointer
   "Maps the stream of a resource element.
-	
+
 This function maps the specified stream of a specified resource
 element and returns a pointer to the stream data. The required access
 to the data can be specified with the read write parameters. If read
@@ -688,7 +688,7 @@ Parameters:
 	stream         - stream to be mapped
 	read           - flag indicating whether read access is required
 	write          - flag indicating whether write access is required
-	
+
 Returns:
 	pointer to stream data or NULL if stream cannot be mapped
 "
@@ -702,12 +702,12 @@ Returns:
 ;; void h3dUnmapResStream( H3DRes res );
 (defh3fun ("h3dUnmapResStream" unmap-resource-stream) void
   "Unmaps a previously mapped resource stream.
-	
+
 This function unmaps a resource stream that has been mapped before.
 
 Parameters:
 	resource  - handle to the resource to be unmapped
-	
+
 Returns:
 	nothing
 "
@@ -746,7 +746,7 @@ Returns:
 ")
 
 ;;;; ---------------------------------------------------------------------------
-;;;; * Group: Specific resource management functions 
+;;;; * Group: Specific resource management functions
 
 ;; H3DRes h3dCreateTexture( const char *name, int width, int height, int fmt, int flags );
 (defh3fun ("h3dCreateTexture" create-texture) resource
@@ -939,7 +939,7 @@ and ttaches them to a specified parent node. If an invalid scenegraph resource
 is specified or the scenegraph resource is unloaded, the function returns 0.
 
 Parameters:
-        parent                 - handle to parent node to which the root of the 
+        parent                 - handle to parent node to which the root of the
                                  new nodes will be attached
         scene-graph-resource   - handle to loaded SceneGraph resource
 
@@ -982,8 +982,8 @@ Returns:
   (node node) (active boolean))
 
 
-;; bool h3dCheckNodeTransformFlag( H3DNode node, bool reset );
-(defh3fun ("h3dCheckNodeTransformFlag" check-node-transform-flag) boolean
+;; bool h3dCheckNodeTransFlag( H3DNode node, bool reset );
+(defh3fun ("h3dCheckNodeTransFlag" check-node-transform-flag) boolean
   "Checks if a scene node has been transformed by the engine.
 
 This function checks if a scene node has been transformed by the engine since
@@ -1345,7 +1345,7 @@ Returns:
   (calc-lod boolean))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; * Group: Group-specific scene graph functions 
+;;;; * Group: Group-specific scene graph functions
 
 
 ;; H3DNode h3dAddGroupNode( H3DNode parent, const char *name );
@@ -1367,7 +1367,7 @@ Returns:
 
 
 ;;;; ---------------------------------------------------------------------------
-;;;; * Group: Model-specific scene graph functions 
+;;;; * Group: Model-specific scene graph functions
 
 
 ;; H3DNode h3dAddModelNode( H3DNode parent, const char *name, H3DRes geometryRes );
@@ -1476,7 +1476,7 @@ Returns:
   (weight float))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; * Group: Mesh-specific scene graph functions 
+;;;; * Group: Mesh-specific scene graph functions
 
 
 ;; H3DNode h3dAddMeshNode( H3DNode parent, const char *name, H3DRes materialRes,
@@ -1531,7 +1531,7 @@ Returns:
   (joint-index int))
 
 ;;;; ---------------------------------------------------------------------------
-;;;; * Group: Light-specific scene graph functions 
+;;;; * Group: Light-specific scene graph functions
 
 ;; H3DNode h3dAddLightNode( H3DNode parent, const char *name, H3DRes materialRes,
 ;;                          const char *lightingContext, const char *shadowContext );
@@ -1539,12 +1539,12 @@ Returns:
   "Adds a Light node to the scene.
 
 This function creates a new Light node and attaches it to the specified parent
-node.  he direction vector of the untransformed light node is pointing along the
-the negative -axis. The specified material resource can define uniforms and
-projective textures.  urthermore it can contain a shader for doing lighting
+node. The direction vector of the untransformed light node is pointing along the
+the negative z-axis. The specified material resource can define uniforms and
+projective textures. Furthermore it can contain a shader for doing lighting
 calculations if deferred shading s used. If no material is required the
-parameter can be zero. The context names efine which shader contexts are used
-when rendering shadow maps or doing light calculations for orward rendering
+parameter can be zero. The context names define which shader contexts are used
+when rendering shadow maps or doing light calculations for forward rendering
 configurations.
 
 Parameters:
@@ -1609,8 +1609,8 @@ Returns:
   (near-distance float)
   (far-distance float))
 
-;; void h3dGetCameraProjectionMat( H3DNode cameraNode, float *projMat );
-(defh3fun ("h3dGetCameraProjectionMat" get-camera-projection-matrix) void
+;; void h3dGetCameraProjMat( H3DNode cameraNode, float *projMat );
+(defh3fun ("h3dGetCameraProjMat" get-camera-projection-matrix) void
   "Gets the camera projection matrix.
 
 This function gets the camera projection matrix used for bringing the
@@ -1703,12 +1703,12 @@ Returns:
 ;; void h3dutFreeMem( char **ptr );
 (defh3ufun ("h3dutFreeMem" free-mem) void
   "Frees memory allocated by the Utility Library.
-                
+
 This utility function frees the memory that was allocated by another function of the Utility Library.
-                
+
 Parameters:
   ptr  - address of a pointer that references to memory allocated by the Utility Library
-                        
+
 Returns:
   nothing
 "
@@ -1729,7 +1729,7 @@ Returns:
 ")
 
 ;;;; ---------------------------------------------------------------------------
-;;;; * Group: OpenGL-related functions 
+;;;; * Group: OpenGL-related functions
 
 ;; bool h3dutInitOpenGL( int hDC );
 (defh3ufun ("h3dutInitOpenGL" init-open-gl) boolean
@@ -1842,7 +1842,7 @@ this routine has to freed manually using the freeMem function.*
 Parameters:
         pixels    - pointer to pixel source data in BGR(A) format from which TGA-image is constructed;
                     memory layout: pixel with position (x, y) in image (origin of image is upper left
-                    corner) has memory location (y * width + x) * (bpp / 8) in pixels-array  
+                    corner) has memory location (y * width + x) * (bpp / 8) in pixels-array
         width     - width of source image
         height    - height of source image
         bpp       - color bit depth of source data (valid values: 24, 32)
@@ -1925,8 +1925,8 @@ parameter of overlays.
 
 Parameters:
         text                - text string to be displayed
-        x, y                - position of the lower left corner of 
-                              the first character; for more details on coordinate 
+        x, y                - position of the lower left corner of
+                              the first character; for more details on coordinate
                               system see overlay documentation
         size                - size (scale) factor of the font
         col-r, col-g, col-b - font color
@@ -1958,7 +1958,7 @@ obtain correct values.
 Parameters:
         font-material-resource  - font material resource used for drawing text
         panel-material-resource - material resource used for drawing info box
-        mode                    - display mode, specifying which data is shown 
+        mode                    - display mode, specifying which data is shown
                                   (<= +max-stat-mode+)
 
 Returns:
