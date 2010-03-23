@@ -8,7 +8,7 @@ Run (horde3d-examples:knight) and (horde3d-examples:chicago)."
   :author "Ole Arndt <ole@sugarshark.com>"
   :maintainer "Ole Arndt <ole@sugarshark.com>"
   :licence "EPL 1.0"
-  :depends-on (:horde3d :lispbuilder-sdl :asdf)
+  :depends-on (:horde3d :lispbuilder-sdl)
   :components ((:static-file "horde3d-examples.asd")
                (:module "examples"
                         :components ((:file "package")
