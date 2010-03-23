@@ -1,7 +1,7 @@
 ;;; bindings-package.lisp --- package definition and exported symbols
 ;;;
 ;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
-;;; 
+;;;
 
 (in-package :cl-user)
 
@@ -11,16 +11,19 @@
   (:shadow #:float #:boolean #:string)
   (:export
 
+   ;; libraries
+   #:horde3d
+   #:horde3d-utils
+
    ;; defines
    #:enum-type
    #:notice-enum-type
    #:deftypedenum
    #:defh3fun
 
-   
    ;; conditions
    #:no-such-enum-type
-   
+
    ;; constants
    #:+root-node+
 
@@ -32,7 +35,7 @@
    #:string
    #:int
    #:void
-   
+
    ;; enums
    #:option
    #:statistics
@@ -43,8 +46,8 @@
    #:resource-element
    #:node-type
    #:node-parameter
-   
-   
+
+
    ;; basic functions
    #:get-version-string
    #:check-extension
@@ -79,7 +82,7 @@
    #:unload-resource
    #:get-resource-element-count
    #:find-resource-element
-   
+
    #:get-resource-parameter-i
    #:set-resource-parameter-i
    #:get-resource-parameter-f
@@ -88,7 +91,7 @@
    #:set-resource-parameter-str
    #:map-resource-stream
    #:unmap-resource-stream
-   
+
    #:query-unloaded-resource
    #:release-unused-resources
 
@@ -123,7 +126,7 @@
    #:cast-ray
    #:get-cast-ray-result
    #:check-node-visibility
-           
+
    ;; Group-specific scene graph functions
    #:add-group-node
 
