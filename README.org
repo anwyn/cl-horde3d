@@ -65,14 +65,16 @@
 
   - Clozure Common Lisp :: Works with 1.3 and 1.4.
 
-  - Clisp :: Works with 2.48
-
-  - SBCL :: Crashes in the foreign code. I suspect this has something
-       to do with SBCLs memory model, failed allocations and no
-       checks. The knight example did run with Horde3D beta3, but only
-       without HDR (which means a big render target buffer).  I need
-       to look into this further.
+  - SBCL :: Crashes in the foreign code, in the h3dInit function,
+            during OpenGL shader initialization.  There seems to be
+            something wrong with the shared libs loading, perhaps I
+            shouldn't load the libs at load time. The knight example
+            did run with Horde3D beta3, but only without HDR (which
+            means a big render target buffer).  I need to look into
+            this further.
   
+  - Clisp :: Crashes in foreign code.
+
   I would like to hear about success or failure with other lisps and
   operating systems.
 
