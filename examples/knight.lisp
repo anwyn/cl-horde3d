@@ -1,13 +1,13 @@
 ;;; knight.lisp --- The knight example from the horde3d distribution
-;;;  _          _       _     _   
-;;; | | ___ __ (_) __ _| |__ | |_ 
+;;;  _          _       _     _
+;;; | | ___ __ (_) __ _| |__ | |_
 ;;; | |/ / '_ \| |/ _` | '_ \| __|
-;;; |   <| | | | | (_| | | | | |_ 
+;;; |   <| | | | | (_| | | | | |_
 ;;; |_|\_\_| |_|_|\__, |_| |_|\__|
-;;;               |___/           
+;;;               |___/
 ;;;
 ;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
-;;; 
+;;;
 
 (in-package :horde3d-examples)
 
@@ -24,17 +24,19 @@
                                                   :initial-contents '(7.0 15.0 0.0))
                   :stat-mode 2
                   :anim-weight 0.0
-                  :content-path (merge-pathnames (make-pathname :directory "Horde3D/Binaries/Content/")
-                                                 *horde3d-home-directory*))
+                  :content-path (merge-pathnames
+                                 (make-pathname :directory '(:relative "Horde3D" "Binaries" "Content"))
+                                 *horde3d-home-directory*))
    :width 800
    :height 600
    :caption "Knight - Horde3D Sample"))
 
 
 (defmethod app-init ((app knight-application))
-  
+
   ;; Add resources
-  (let ((env-res (h3d:add-resource :scene-graph "models/sphere/sphere.scene.xml" 0))
+  (let ((hdr-pipeline (h3d:add-resource :pipeline "pipelines/hdr.pipeline.xml" 0))
+        (env-res (h3d:add-resource :scene-graph "models/sphere/sphere.scene.xml" 0))
         (knight-res (h3d:add-resource :scene-graph "models/knight/knight.scene.xml" 0))
         (knight-anim-res-1 (h3d:add-resource :animation "animations/knight_order.anim" 0))
         (knight-anim-res-2 (h3d:add-resource :animation "animations/knight_attack.anim" 0))
@@ -42,6 +44,8 @@
 
     ;; Load resources
     (h3d:load-resources-from-disk (namestring (content-path app)))
+
+    (setf (hdr-pipeline app) hdr-pipeline)
 
     ;; add camera
     (setf (camera-node app) (h3d:add-camera-node h3d:+root-node+ "Camera"
@@ -53,13 +57,13 @@
     (let ((env (h3d:add-nodes h3d:+root-node+ env-res))
           (knight (h3d:add-nodes h3d:+root-node+ knight-res)))
       (setf (knight-node app) knight)
-      
+
       (h3d:set-node-transform env 0 -20 0 0 0 0 20 20 20)
       (h3d:set-node-transform knight 0 0 0 0 180 0 0.1 0.1 0.1)
-      
+
       (h3d:setup-model-animation-stage knight 0 knight-anim-res-1 0 "" nil)
       (h3d:setup-model-animation-stage knight 1 knight-anim-res-2 0 "" nil)
-      
+
       ;; add particles to hand
       (h3d:find-nodes knight "Bip01_R_Hand" :joint)
       (let ((particle-sys-node (h3d:add-nodes (h3d:get-node-find-result 0) particle-sys-res)))
@@ -80,7 +84,9 @@
   ;; Customize post processing effects
   #-sbcl
   (let ((mat-res (h3d:find-resource :material "pipelines/postHDR.material.xml")))
-    (h3d:set-material-uniform mat-res "hdrParams" 2.5 0.5 0.08 0))
+    (h3d:set-material-uniform mat-res "hdrExposure" 2.5 0.0 0.0 0.0)
+    (h3d:set-material-uniform mat-res "hdrBrightThres" 0.5 0.0 0.0 0.0)
+    (h3d:set-material-uniform mat-res "hdrBrightOffset" 0.08 0.0 0.0 0.0))
 
   ;; Mark end of frame
   (h3d:finalize-frame))
@@ -96,7 +102,7 @@
     (decf (anim-weight app) (/ 2 (curr-fps app)))
     (when (< (anim-weight app) 0.0)
       (setf (anim-weight app) 0.0)))
-  
+
   (unless (freeze? app)
     (let ((inv-fps (/ 1.0 (curr-fps app))))
       (incf (anim-time app) inv-fps)
@@ -109,9 +115,9 @@
 
       (h3d:do-nodes (node :start-node (particle-sys-node app) :node-type :emitter)
         (h3d:advance-emitter-time node inv-fps))))
-  
+
   ;; Set camera parameters
-  
+
   (with-accessors ((pos viewer-position)
                    (rot viewer-orientation)
                    (cam camera-node)
@@ -122,7 +128,7 @@
 
 
     (when (> (stat-mode app) 0)
-      (h3d:show-frame-statistics font panel (stat-mode app))    
+      (h3d:show-frame-statistics font panel (stat-mode app))
 
       ;; Display weight
       (h3d:show-text (format nil "Weight: ~a" (anim-weight app))
@@ -132,7 +138,7 @@
     (h3d:show-overlay 0.75 0.8 0 1 0.75 1 0 0
                       1 1 1 0 1 0.8 1 1
                       1 1 1 1 (logo-resource app) 7)
-    
+
     ;; Render scene
     (h3d:render cam)))
 

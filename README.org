@@ -114,9 +114,11 @@
 
   - Install Lispbuilder SDL.
 
-  - For now you have to adjust the *horde3d-home-directory* variable
-    in src/examples.lisp to point to your Horde3D installation. The
-    examples will load resources from there.
+  - Either you symlink the top level Horde3D directory with the name
+    'Horde3D' into the top level directory of cl-horde3d, or you
+    adjust the *horde3d-home-directory* variable in src/examples.lisp
+    to point to your Horde3D installation. The examples will load
+    resources from there.
 
   - Load the horde3d-examples system with asdf.
 
@@ -126,9 +128,13 @@
 
 * Footnotes
 
-- [fn:1] http://common-lisp.net/project/cffi
-- [fn:2] [[http://horde3d.org]]
-- [fn:3] http://code.google.com/p/lispbuilder/wiki/LispbuilderSDL
-- [fn:4] http://www.libsdl.org
-- [fn:5] http://www.eclipse.org/legal/epl-v10.html
+[fn:1] http://common-lisp.net/project/cffi
+
+[fn:2] [[http://horde3d.org]]
+
+[fn:3] http://code.google.com/p/lispbuilder/wiki/LispbuilderSDL
+
+[fn:4] http://www.libsdl.org
+
+[fn:5] http://www.eclipse.org/legal/epl-v10.html
 

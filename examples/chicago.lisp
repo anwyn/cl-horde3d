@@ -1,13 +1,13 @@
 ;;; chicago.lisp --- horde3d example
-;;;       _     _                       
-;;;   ___| |__ (_) ___ __ _  __ _  ___  
-;;;  / __| '_ \| |/ __/ _` |/ _` |/ _ \ 
+;;;       _     _
+;;;   ___| |__ (_) ___ __ _  __ _  ___
+;;;  / __| '_ \| |/ __/ _` |/ _` |/ _ \
 ;;; | (__| | | | | (_| (_| | (_| | (_) |
-;;;  \___|_| |_|_|\___\__,_|\__, |\___/ 
-;;;                         |___/       
+;;;  \___|_| |_|_|\___\__,_|\__, |\___/
+;;;                         |___/
 ;;;
 ;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
-;;; 
+;;;
 
 (in-package :horde3d-examples)
 
@@ -26,7 +26,7 @@
 (defclass chicago-application (example-application)
   ((deferred-pipeline  :accessor deferred-pipeline  :initarg  :deferred-pipeline)
    (particles :accessor particles :initarg :particles
-              :initform (make-array 100 :element-type '(or particle null)))))
+              :initform (make-array 100 :element-type '(or particle null) :initial-element nil))))
 
 (defun chicago ()
   (example-main-sdl
@@ -49,7 +49,7 @@
           (dz particle) (* (cos ang) rad))))
 
 (defmethod app-init ((app chicago-application))
-  
+
   ;; Add resources
   (let ((env-res (h3d:add-resource :scene-graph "models/platform/platform.scene.xml"))
         (skybox-res (h3d:add-resource :scene-graph "models/skybox/skybox.scene.xml"))
@@ -94,7 +94,7 @@
         (choose-destination p)
         (h3d:set-node-transform (node p) (px p) 0.02 (pz p) 0 0 0 1 1 1)
         (setf (aref (particles app) i) p))))
-  
+
   ;; Mark end of frame
   (h3d:finalize-frame))
 
@@ -102,7 +102,7 @@
 (defmethod app-main-loop ((app chicago-application))
   (unless (freeze? app)
     (update-crowd app))
-  
+
   ;; Set camera parameters
   (with-accessors ((pos viewer-position)
                    (rot viewer-orientation)
@@ -114,7 +114,7 @@
                             (aref rot 0) (aref rot 1) 0 1 1 1 )
 
     (when (> (stat-mode app) 0)
-      (h3d:show-frame-statistics font panel (stat-mode app))    
+      (h3d:show-frame-statistics font panel (stat-mode app))
 
       ;; Display weight
       (h3d:show-text (format nil "Pipeline: ~a"
@@ -128,88 +128,92 @@
     (h3d:show-overlay 0.75 0.8 0 1 0.75 1 0 0
                       1 1 1 0 1 0.8 1 1
                       1 1 1 1 (logo-resource app) 7)
-    
+
     ;; Render scene
     (h3d:render cam)))
 
 
 (defun update-crowd (app)
   (let ((d1 0.25) (d2 2.0) (d3 4.5)
-	(f1 3.0) (f2 1.0) (f3 0.1))
-    (declare (type single-float d1 d2 d3 f1 f2 f3)
-             (optimize (speed 3)))
-    (loop :for p :across (particles app) :do
-      (let ((px (px p)) (pz (pz p))
-            (dx (dx p)) (dz (dz p))
-            (ox (ox p)) (oz (oz p))
-            (fx 0.0) (fz 0.0))
-        (declare (type single-float px pz dx dz ox oz fx fz))
-        ;; reset force
-        (let ((dist (sqrt (+ (* (- dx px) (- dx px))
-                             (* (- dz pz) (- dz pz))))))
-          (declare (type single-float dist))
-          (cond
-            ((> dist 3.0)
-             ;; destination not reached, walk towards destination
-             (incf fx (* 0.035 (/ (- dx px) dist)))
-             (incf fz (* 0.035 (/ (- dz pz) dist)))
-             (loop :for p2 :across (particles app)
-               :when (not (eq p p2)) :do
-               (let* ((p2x (px p2))
-                      (p2z (pz p2))
-                      (dist2 (sqrt (+ (* (- px p2x) (- px p2x))
-                                      (* (- pz p2z) (- pz p2z)))))
-                      (strength (cond
-                                  ((and (<= dist2 d3) (> dist2 d2))
-                                   (let* ((m (/ (- f3 0) (- d2 d3)))
-                                          (n (- 0 (* m d3))))
-                                     (+ (* m dist2) n)))
-                                  ((and (<= dist2 d2) (> dist2 d1))
-                                   (let* ((m (/ (- f2 f3) (- d1 d2)))
-                                          (n (- f3 (* m d2))))
-                                     (+ (* m dist2) n)))
-                                  ((<= dist2 d1)
-                                   (let* ((m (/ (- f1 f2) (- 0 d1)))
-                                          (n (- f2 (* m d1))))
-                                     (+ (* m dist2) n)))
-                                  (t
-                                   0.0))))
-                 (declare (type single-float p2x p2z dist strength))
-                 (incf fx (* strength (the single-float (/ (- px p2x) dist2))))
-                 (incf fz (* strength (the single-float (/ (- pz p2z) dist2)))))))
-            (t
-             ;; near destination, choose a new one
-             (choose-destination p)))
+	(f1 3.0) (f2 1.0) (f3 0.1)
+        (fps (curr-fps app)))
+    (declare (type single-float d1 d2 d3 f1 f2 f3 fps)
+             (optimize (speed 3) (safety 1)))
 
-          ;; make force framerate independant
-          (setf fx (* fx (/ 30.0 (curr-fps app)))
-                fz (* fz (/ 30.0 (curr-fps app))))
+    (loop :for p :across (particles app)
+          :do
+          (let ((px (px p)) (pz (pz p))
+                (dx (dx p)) (dz (dz p))
+                (ox (ox p)) (oz (oz p))
+                (fx 0.0) (fz 0.0))
+            (declare (type single-float px pz dx dz ox oz fx fz))
+            ;; reset force
+            (let ((dist (sqrt (+ (* (- dx px) (- dx px))
+                                 (* (- dz pz) (- dz pz))))))
+              (declare (type single-float dist))
+              (cond
+                ((> dist 3.0)
+                 ;; destination not reached, walk towards destination
+                 (incf fx (* 0.035 (/ (- dx px) dist)))
+                 (incf fz (* 0.035 (/ (- dz pz) dist)))
+                 (loop :for p2 :across (particles app)
+                       :when (not (eq p p2))
+                       :do
+                       (let* ((p2x (px p2))
+                              (p2z (pz p2))
+                              (dist2 (sqrt (+ (* (- px p2x) (- px p2x))
+                                              (* (- pz p2z) (- pz p2z)))))
+                              (strength (cond
+                                          ((and (<= dist2 d3) (> dist2 d2))
+                                           (let* ((m (/ (- f3 0) (- d2 d3)))
+                                                  (n (- 0 (* m d3))))
+                                             (+ (* m dist2) n)))
+                                          ((and (<= dist2 d2) (> dist2 d1))
+                                           (let* ((m (/ (- f2 f3) (- d1 d2)))
+                                                  (n (- f3 (* m d2))))
+                                             (+ (* m dist2) n)))
+                                          ((<= dist2 d1)
+                                           (let* ((m (/ (- f1 f2) (- 0 d1)))
+                                                  (n (- f2 (* m d1))))
+                                             (+ (* m dist2) n)))
+                                          (t
+                                           0.0))))
+                         (declare (type single-float p2x p2z dist strength))
+                         (incf fx (* strength (the single-float (/ (- px p2x) dist2))))
+                         (incf fz (* strength (the single-float (/ (- pz p2z) dist2)))))))
+                (t
+                 ;; near destination, choose a new one
+                 (choose-destination p)))
 
-          ;; set new position
-          (incf px fx)
-          (incf pz fz)
-          (setf (px p) px)
-          (setf (pz p) pz)
+              ;; make force framerate independant
+              (setf fx (* fx (coerce (/ 30.0f0 fps) 'single-float))
+                    fz (* fz (coerce (/ 30.0f0 fps) 'single-float)))
 
-          ;; calculate orientation
-          (setf ox (the single-float (/ (+ ox fx) 2.0)))
-          (setf oz (the single-float (/ (+ oz fz) 2.0)))
+              ;; set new position
+              (incf px fx)
+              (incf pz fz)
+              (setf (px p) px)
+              (setf (pz p) pz)
 
-          ;; update character position
-          (let ((ry (radtodeg (if (/= oz 0.0) (atan ox oz) 0.0))))
-            (declare (type single-float ry))
-            (setf (ox p) ox)
-            (setf (oz p) oz)
-            (h3d:set-node-transform (node p) px 0.02 pz 0 ry 0 1 1 1))
+              ;; calculate orientation
+              (setf ox (the single-float (/ (+ ox fx) 2.0)))
+              (setf oz (the single-float (/ (+ oz fz) 2.0)))
 
-          ;; update character animation
-          (let ((vel (sqrt (+ (* fx fx) (* fz fz)))))
-            (declare (type single-float vel))
-            (incf (anim-time p) (* vel 35.0))
-            (h3d:set-model-animation-parameters (node p) 0 (anim-time p) 1.0)))))))
+              ;; update character position
+              (let ((ry (radtodeg (if (/= oz 0.0) (atan ox oz) 0.0))))
+                (declare (type single-float ry))
+                (setf (ox p) ox)
+                (setf (oz p) oz)
+                (h3d:set-node-transform (node p) px 0.02 pz 0 ry 0 1 1 1))
+
+              ;; update character animation
+              (let ((vel (sqrt (+ (* fx fx) (* fz fz)))))
+                (declare (type single-float vel))
+                (incf (anim-time p) (* vel 35.0))
+                (h3d:set-model-animation-parameters (node p) 0 (anim-time p) 1.0)))))))
 
 
 
-                     
+
 
 ;;; chicago.lisp ends here

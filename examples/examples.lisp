@@ -1,22 +1,20 @@
 ;;; examples.lisp --- Examples of the standard horde3d distribution ported to Lisp
-;;;                                 _           
-;;;   _____  ____ _ _ __ ___  _ __ | | ___  ___ 
+;;;                                 _
+;;;   _____  ____ _ _ __ ___  _ __ | | ___  ___
 ;;;  / _ \ \/ / _` | '_ ` _ \| '_ \| |/ _ \/ __|
 ;;; |  __/>  < (_| | | | | | | |_) | |  __/\__ \
 ;;;  \___/_/\_\__,_|_| |_| |_| .__/|_|\___||___/
-;;;                          |_|                
+;;;                          |_|
 ;;;
 ;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
-;;; 
+;;;
 
 
 (in-package :horde3d-examples)
 
 (defparameter *horde3d-home-directory*
-  #p"/home/ole/src/graphics//Horde3D_SDK_1.0.0_Beta4/")
-
-;; (defparameter *horde3d-home-directory*
-;;   #p"/home/ole/src/graphics//Horde3D/")
+  (asdf:system-relative-pathname (asdf:find-system :horde3d-examples)
+                                 (make-pathname :directory '(:relative "Horde3D"))))
 
 (defclass example-application ()
   ((viewer-position    :accessor viewer-position    :initarg  :viewer-position    :initform (make-array 3 :initial-element 0.0 :element-type '(or null single-float)))
@@ -28,10 +26,10 @@
    (fullscreen         :accessor fullscreen?        :initarg  :fullscreen         :initform nil)
    (width              :accessor width              :initarg  :width)
    (height             :accessor height             :initarg  :height)
-   
+
    (hdr-pipeline       :accessor hdr-pipeline       :initarg  :hdr-pipeline)
    (fwd-pipeline       :accessor fwd-pipeline       :initarg  :fwd-pipeline)
-      
+
    (camera-node        :accessor camera-node        :initarg  :camera-node)
 
    (anim-time          :accessor anim-time          :initarg  :anim-time          :initform 0.0)
@@ -41,7 +39,7 @@
    (logo-resource      :accessor logo-resource      :initarg  :logo-resource)
    (font-resource      :accessor font-resource      :initarg  :font-resource)
    (panel-resource     :accessor panel-resource     :initarg  :panel-resource)
-   
+
    (content-path       :accessor content-path       :initarg  :content-path)
    (debug-view         :accessor show-debug-view?   :initarg  :show-debug-view    :initform nil)
    (wire-frame         :accessor show-wire-frame?   :initarg  :show-wire-frame    :initform nil)
@@ -53,13 +51,12 @@
 (defgeneric app-init (app)
   (:method :before ((app example-application))
     (h3d:init)
-    (h3d:set-options :load-textures 1
-                     :texture-compression 0
-                     :fast-animation 0
-                     :max-anisotropy 4
-                     :shadow-map-size 2048)
-    (setf (hdr-pipeline app) (h3d:add-resource :pipeline "pipelines/hdr.pipeline.xml" 0)
-          (fwd-pipeline app) (h3d:add-resource :pipeline "pipelines/forward.pipeline.xml" 0)
+    (h3d:set-option :load-textures 1)
+    (h3d:set-option :texture-compression 0)
+    (h3d:set-option :fast-animation 0)
+    (h3d:set-option :max-anisotropy 4)
+    (h3d:set-option :shadow-map-size 2048)
+    (setf (fwd-pipeline app) (h3d:add-resource :pipeline "pipelines/forward.pipeline.xml" 0)
           (font-resource app) (h3d:add-resource :material "overlays/font.material.xml" 0)
           (panel-resource app) (h3d:add-resource :material "overlays/panel.material.xml" 0)
           (logo-resource app) (h3d:add-resource :material "overlays/logo.material.xml" 0))))
@@ -69,8 +66,8 @@
     (declare (ignore app)))
 
   (:method :after ((app example-application))
-           (declare (ignore app))
-           (h3d:release)))
+    (declare (ignore app))
+    (h3d:release)))
 
 (defgeneric app-resize (app width height)
   (:documentation "Set window of app to new width and height.")
@@ -87,7 +84,7 @@
 
 (defgeneric app-key-press-event (app key)
   (:documentation "Key handler")
-  
+
   (:method ((app example-application) key)
     (declare (ignore app key)))
 
@@ -99,12 +96,12 @@
 
   (:method ((app example-application) (key (eql :sdl-key-f1)))
     (toggle-fullscreen app))
-  
+
   (:method ((app example-application) (key (eql :sdl-key-f3)))
     (with-accessors ((cam camera-node)) app
-      (if (eql (h3d:node-parameter cam :camera-pipeline-resource) (hdr-pipeline app))
-          (setf (h3d:node-parameter cam :camera-pipeline-resource) (fwd-pipeline app))
-          (setf (h3d:node-parameter cam :camera-pipeline-resource) (hdr-pipeline app)))))
+      (if (eql (h3d:node-parameter cam :camera-pipeline-resource) (fwd-pipeline app))
+          (setf (h3d:node-parameter cam :camera-pipeline-resource) (hdr-pipeline app))
+          (setf (h3d:node-parameter cam :camera-pipeline-resource) (fwd-pipeline app)))))
 
   (:method ((app example-application) (key (eql :sdl-key-f7)))
     (setf (show-debug-view? app) (not (show-debug-view? app))))
@@ -132,13 +129,11 @@
 
 (declaim (inline degtorad))
 (defun degtorad (angle)
-  (declare (type single-float angle))
-  (the single-float (* angle (/ pi 180.0))))
+  (coerce (* angle (/ pi 180.0)) 'single-float))
 
 (declaim (inline radtodeg))
 (defun radtodeg (angle)
-  (declare (type single-float angle))
-  (the single-float (* angle (/ 180.0 pi))))
+  (coerce (* angle (/ 180.0 pi)) 'single-float))
 
 (defun handle-movement (app)
   (let ((curr-vel (/ (velocity app) (curr-fps app))))
@@ -204,10 +199,10 @@
       (setf (fullscreen? app) (if (fullscreen? app) nil t))
       (app-init app)
       (app-resize app width height))))
-    
+
 
 (defun example-main-sdl (app &key (width 800) (height 600) (caption "Horde3D example"))
-  "Main example function. This function contains the game loop. Call it with an 
+  "Main example function. This function contains the game loop. Call it with an
 instance of a class derived from example-application."
   (sdl:with-init ()
     (sdl:window width height
@@ -215,16 +210,24 @@ instance of a class derived from example-application."
                 :flags sdl:sdl-opengl
                 :title-caption caption
                 :icon-caption caption)
+
+    (setf (sdl:frame-rate) 0)
+    (sdl:enable-unicode)
+
     (app-init app)
     (app-resize app width height)
-    (setf (sdl:frame-rate) 0)
-    (sdl:enable-unicode t)
+
     (let ((frames 0)
           (fps 100.0)
           (mx 0)
           (my 0)
           (m-init nil))
       (sdl:with-events ()
+        ;; Redraw display
+        (:video-expose-event ()
+                             (sdl:update-display))
+
+        ;; leave example
         (:quit-event () (app-release app) t)
 
         (:active-event (:gain gain)
@@ -235,7 +238,7 @@ instance of a class derived from example-application."
                              (when (null m-init)
                                (setf m-init t)
                                (setf mx x my y))
-                             
+
                              (when (not (freeze? app))
                                (app-mouse-move-event app (- x mx) (- y my)))
 
@@ -252,9 +255,6 @@ instance of a class derived from example-application."
                        (setf (modifiers app) mod)
                        (setf (gethash key (keys app)) nil)
                        (app-key-release-event app key))
-
-        ;; Redraw display
-	(:video-expose-event () (sdl:update-display))
 
         ;; Do work
         (:idle ()
