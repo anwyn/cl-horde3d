@@ -6,7 +6,7 @@
 ;;;  \___/_/\_\__,_|_| |_| |_| .__/|_|\___||___/
 ;;;                          |_|
 ;;;
-;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
+;;; Copyright (C) 2009 Ole Arndt <anwyn@sugarshark.com>
 ;;;
 
 

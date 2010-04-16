@@ -4,9 +4,9 @@
   :description "The Horde3d examples ported to Common Lisp."
   :long-description "The Horde3d examples ported to Common Lisp.
 Run (horde3d-examples:knight) and (horde3d-examples:chicago)."
-  :version "0.1"
-  :author "Ole Arndt <ole@sugarshark.com>"
-  :maintainer "Ole Arndt <ole@sugarshark.com>"
+  :version "0.2"
+  :author "Ole Arndt <anwyn@sugarshark.com>"
+  :maintainer "Ole Arndt <anwyn@sugarshark.com>"
   :licence "EPL 1.0"
   :depends-on (:horde3d :lispbuilder-sdl)
   :components ((:static-file "horde3d-examples.asd")

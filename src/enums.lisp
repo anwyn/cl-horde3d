@@ -6,7 +6,7 @@
 ;;;  \___|_| |_|\__,_|_| |_| |_|___/
 
 ;;;
-;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
+;;; Copyright (C) 2009 Ole Arndt <anwyn@sugarshark.com>
 ;;;
 
 (in-package :horde3d-cffi)
@@ -438,7 +438,7 @@
 
 (deftypedenum mesh-node-parameters
   "The available Mesh node parameters.
-		
+
  :mesh-material-resource - Material resource used for the mesh
  :mesh-batch-start       - First triangle index of mesh in Geometry resource of parent Model node [read-only]
  :mesh-batch-count       - Number of triangle indices used for drawing mesh [read-only]
@@ -464,7 +464,7 @@
 
 (deftypedenum light-node-parameters
   "The available Light node parameters.
-		
+
  :light-material-resource   - Material resource used for the light
  :light-radius              - Radius of influence (default: 100.0)
  :light-fov                 - Field of view (FOV) angle (default: 90.0)
@@ -487,7 +487,7 @@
 
 (deftypedenum camera-node-parameters
     "The available Camera node parameters.
-		
+
  :camera-pipeline-resource    - Pipeline resource used for rendering
  :camera-out-texture-resource - 2D Texture resource used as output buffer (can be 0 to use main framebuffer) (default: 0)
  :camera-out-buffer-index     - Index of the output buffer for stereo rendering (values: 0 for left eye, 1 for right eye) (default: 0)
@@ -514,7 +514,7 @@
 
 (deftypedenum emitter-node-parameters
   "The available Emitter node parameters.
-		
+
  :emitter-material-resource        - Material resource used for rendering
  :emitter-particle-effect-resource - ParticleEffect resource which configures particle properties
  :emitter-max-count                - Maximal number of particles living at the same time

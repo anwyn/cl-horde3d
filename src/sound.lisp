@@ -1,13 +1,13 @@
 ;;; sound.lisp --- bindings to the horde3d sound extension
-;;;                            _ 
+;;;                            _
 ;;;  ___  ___  _   _ _ __   __| |
 ;;; / __|/ _ \| | | | '_ \ / _` |
 ;;; \__ \ (_) | |_| | | | | (_| |
 ;;; |___/\___/ \__,_|_| |_|\__,_|
-                             
+
 ;;;
-;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
-;;; 
+;;; Copyright (C) 2009 Ole Arndt <anwyn@sugarshark.com>
+;;;
 
 
 ;;; Make symbols available in the horde3d package

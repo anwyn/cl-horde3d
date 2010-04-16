@@ -1,13 +1,13 @@
 ;;; terrain-bindings.lisp --- bindings to the horde3d terrain extension
-;;;  _                      _             _     _           _ _                 
-;;; | |_ ___ _ __ _ __ __ _(_)_ __       | |__ (_)_ __   __| (_)_ __   __ _ ___ 
+;;;  _                      _             _     _           _ _
+;;; | |_ ___ _ __ _ __ __ _(_)_ __       | |__ (_)_ __   __| (_)_ __   __ _ ___
 ;;; | __/ _ \ '__| '__/ _` | | '_ \ _____| '_ \| | '_ \ / _` | | '_ \ / _` / __|
 ;;; | ||  __/ |  | | | (_| | | | | |_____| |_) | | | | | (_| | | | | | (_| \__ \
 ;;;  \__\___|_|  |_|  \__,_|_|_| |_|     |_.__/|_|_| |_|\__,_|_|_| |_|\__, |___/
-;;;                                                                   |___/     
+;;;                                                                   |___/
 ;;;
-;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
-;;; 
+;;; Copyright (C) 2009 Ole Arndt <anwyn@sugarshark.com>
+;;;
 
 (cl:defpackage #:horde3d-terrain-cffi
   (:nicknames #:%h3d-terrain)
@@ -17,7 +17,7 @@
                 #:eval-when
                 #:push
                 #:*features*)
-  (:export 
+  (:export
    #:add-terrain-node
    #:create-geometry-resource))
 
@@ -50,13 +50,13 @@
 ;; NodeHandle addTerrainNode( NodeHandle parent, const char *name, ResHandle heightMapRes, ResHandle materialRes );
 (defh3fun ("h3dAddTerrainNode" add-terrain-node) node
   "Adds a Terrain node to the scene.
-                
+
 This function creates a new Terrain node and attaches it to the specified parent node.
-                
+
 Parameters:
         parent     - handle to parent node to which the new node will be attached
         name       - name of the node
-        height-map - handle to a Texture2D resource that contains the terrain height information (must be square and POT) 
+        height-map - handle to a Texture2D resource that contains the terrain height information (must be square and POT)
         material   - handle to the Material resource used for rendering the terrain
 
 Returns:
@@ -67,7 +67,7 @@ Returns:
 ;; ResHandle createGeometryResource( NodeHandle node, const char *resName, float meshQuality );
 (defh3fun ("h3dCreateGeometryResource" create-geometry-resource) resource
   "Creates a Geometry resource from a specified Terrain node.
-                                
+
 This function creates a new Geometry resource that contains the vertex data of the specified Terrain node.
 To reduce the amount of data, it is possible to specify a quality value which controls the overall resolution
 of the terrain mesh. The algorithm will automatically create a higher resoultion in regions where the
@@ -77,7 +77,7 @@ Parameters:
         node            - handle to terrain node that will be accessed
         resName         - name of the Geometry resource that shall be created
         meshQuality - constant controlling the overall mesh resolution
-        
+
 Returns:
          handle to the created Geometry resource or 0 in case of failure
 "

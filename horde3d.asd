@@ -3,9 +3,9 @@
 (defsystem :horde3d
   :description "CFFI bindings for the Horde3D rendering engine."
   :long-description "CFFI bindings for the Horde3D rendering engine."
-  :version "0.1"
-  :author "Ole Arndt <ole@sugarshark.com>"
-  :maintainer "Ole Arndt <ole@sugarshark.com>"
+  :version "0.2"
+  :author "Ole Arndt <anwyn@sugarshark.com>"
+  :maintainer "Ole Arndt <anwyn@sugarshark.com>"
   :licence "EPL 1.0"
   :depends-on (:cffi)
   :in-order-to ((test-op (load-op :horde3d-test)))

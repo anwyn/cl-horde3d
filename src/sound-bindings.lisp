@@ -1,13 +1,13 @@
 ;;; sound-bindings.lisp --- bindings to the horde3d sound extension
-;;;                            _       _     _           _ _                 
-;;;  ___  ___  _   _ _ __   __| |     | |__ (_)_ __   __| (_)_ __   __ _ ___ 
+;;;                            _       _     _           _ _
+;;;  ___  ___  _   _ _ __   __| |     | |__ (_)_ __   __| (_)_ __   __ _ ___
 ;;; / __|/ _ \| | | | '_ \ / _` |_____| '_ \| | '_ \ / _` | | '_ \ / _` / __|
 ;;; \__ \ (_) | |_| | | | | (_| |_____| |_) | | | | | (_| | | | | | (_| \__ \
 ;;; |___/\___/ \__,_|_| |_|\__,_|     |_.__/|_|_| |_|\__,_|_|_| |_|\__, |___/
-;;;                                                                |___/     
+;;;                                                                |___/
 ;;;
-;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
-;;; 
+;;; Copyright (C) 2009 Ole Arndt <anwyn@sugarshark.com>
+;;;
 
 (cl:defpackage #:horde3d-sound-cffi
   (:nicknames #:%h3d-sound)
@@ -17,7 +17,7 @@
                 #:eval-when
                 #:push
                 #:*features*)
-  (:export 
+  (:export
    #:open-device
    #:close-device
    #:get-open-device
@@ -143,7 +143,7 @@ The variables used in the calculations explained::
 
 ;;;; Group: Sound Extension
 
-;;; Basic functions 
+;;; Basic functions
 
 (defh3fun ("h3dOpenDevice" open-device) boolean
   "Opens a sound device for playback.
@@ -228,7 +228,7 @@ Returns:
 "
   (model distance-model))
 
-;;;; Group: Listener-specific scene graph functions 
+;;;; Group: Listener-specific scene graph functions
 
 
 ;;; NodeHandle addListenerNode( NodeHandle parent, const char *name );
@@ -277,7 +277,7 @@ Returns:
   (listener-node node))
 
 
-;;;; Group: Sound-specific scene graph functions 
+;;;; Group: Sound-specific scene graph functions
 
 ;;; NodeHandle addSoundNode( NodeHandle parent, const char *name, ResHandle soundRes );
 (defh3fun ("h3dAddSoundNode" add-sound-node) node

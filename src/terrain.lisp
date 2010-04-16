@@ -1,12 +1,12 @@
 ;;; terrain.lisp --- bindings to the horde3d terrain extension
-;;;  _                      _       
-;;; | |_ ___ _ __ _ __ __ _(_)_ __  
-;;; | __/ _ \ '__| '__/ _` | | '_ \ 
+;;;  _                      _
+;;; | |_ ___ _ __ _ __ __ _(_)_ __
+;;; | __/ _ \ '__| '__/ _` | | '_ \
 ;;; | ||  __/ |  | | | (_| | | | | |
 ;;;  \__\___|_|  |_|  \__,_|_|_| |_|
-                                
+
 ;;;
-;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
+;;; Copyright (C) 2009 Ole Arndt <anwyn@sugarshark.com>
 
 (in-package :horde3d)
 

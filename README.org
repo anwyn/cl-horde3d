@@ -9,7 +9,9 @@
 * What is CL-HORDE3D?
 
   A CFFI[fn:1] wrapper for the Horde3D library. Display flashy 3D graphics
-  with Common Lisp.
+  with Common Lisp. I use it to visualize some AI experiments I enjoy
+  to develop in my free time. Unfortunately I do not have very much 
+  of it, so the progress on CL-HORDE3D is unlikely to be fast.
 
 * What is Horde3D?
 
@@ -51,7 +53,8 @@
 
   cl-horde3d currently works together with the
   Horde3D_SDK_1.0.0-beta4. It should also run with the community svn
-  version, but last time I tried the Chicago Example failed.
+  version, as the API is compatible, but currently it crashes right at
+  the start in the native code at h3dInit().
 
   There is also a horde3d-beta3-branch in the GIT repository which
   contains an older version of cl-horde3d which should run with
@@ -73,10 +76,12 @@
             means a big render target buffer).  I need to look into
             this further.
   
-  - Clisp :: Crashes in foreign code.
+  - Clisp :: Like SBCL. 
 
   I would like to hear about success or failure with other lisps and
-  operating systems.
+  operating systems. I'm also grateful for tips how to debug this
+  better. Attaching gdb to the lisp process did not yet give me the
+  insight I needed.
 
 * Translating the Horde3D API from C to CL
   
@@ -107,7 +112,7 @@
   There is code in CL-HORDE3D for the terrain and the sound
   extension, but it is totally untested and might not run at all. It
   is therefore disabled by default. The organization of source files
-  for the extension will very likely change in the near future.
+  for the extension will very likely change in the future.
 
 * Running the examples
 
@@ -120,9 +125,10 @@
     'Horde3D' into the top level directory of cl-horde3d, or you
     adjust the *horde3d-home-directory* variable in src/examples.lisp
     to point to your Horde3D installation. The examples will load
-    resources from there.
+    resources and assets from there.
 
-  - Load the horde3d-examples system with asdf.
+  - Load the horde3d-examples system with asdf. (Use CCL, other Lisp
+    implementations will not work right now.) 
 
   - run (horde3d-examples:knight) or (horde3d-examples:chicago) from
     the REPL. The example programs should have the same controls
@@ -130,13 +136,13 @@
 
 * Footnotes
 
-[fn:1] http://common-lisp.net/project/cffi
+[fn:1] [[http://common-lisp.net/project/cffi]]
 
 [fn:2] [[http://horde3d.org]]
 
-[fn:3] http://code.google.com/p/lispbuilder/wiki/LispbuilderSDL
+[fn:3] [[http://code.google.com/p/lispbuilder/wiki/LispbuilderSDL]]
 
-[fn:4] http://www.libsdl.org
+[fn:4] [[http://www.libsdl.org]]
 
-[fn:5] http://www.eclipse.org/legal/epl-v10.html
+[fn:5] [[http://www.eclipse.org/legal/epl-v10.html]]
 

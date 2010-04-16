@@ -6,7 +6,7 @@
 ;;; |_| |_|\___/|_|  \__,_|\___|____/ \__,_|
 
 ;;;
-;;; Copyright (C) 2009 Ole Arndt <ole@sugarshark.com>
+;;; Copyright (C) 2009 Ole Arndt <anwyn@sugarshark.com>
 ;;;
 
 (in-package :horde3d)
