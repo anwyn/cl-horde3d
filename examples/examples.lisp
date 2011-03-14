@@ -261,9 +261,16 @@ instance of a class derived from example-application."
                (when (>= (incf frames) 3)
                  (setf fps (max 100.0 (sdl:average-fps)))
                  (setf frames 0))
-               (assert (not (zerop fps)))
                (setf (curr-fps app) (coerce fps 'single-float))
-               (app-main-loop app)
+               (with-simple-restart
+                   (skip-game-loop "Skip game loop for this frame")
+                 (app-main-loop app))
+               #+horde3d-debug
+               (with-simple-restart
+                   (skip-swank-request "Skip swank evaluation")
+                 (let ((connection
+                        (or swank::*emacs-connection* (swank::default-connection))))
+                   (swank::handle-requests connection t)))
                (sdl:update-display))))))
 
 ;;; examples.lisp ends here

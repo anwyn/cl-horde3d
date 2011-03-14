@@ -59,14 +59,14 @@
                %h3d:get-error)
 
 (defun init ()
-  ;; (load-foreign-library '%h3d:horde3d)
-  ;; (load-foreign-library '%h3d:horde3d-utils)
+  (load-foreign-library '%h3d:horde3d)
+  (load-foreign-library '%h3d:horde3d-utils)
   (%h3d:init))
 
 (defun release ()
-  ;; (close-foreign-library '%h3d:horde3d-utils)
-  ;; (close-foreign-library '%h3d:horde3d)
-  (%h3d:release))
+  (%h3d:release)
+  (close-foreign-library '%h3d:horde3d-utils)
+  (close-foreign-library '%h3d:horde3d))
 
 (import-export %h3d:setup-viewport
                %h3d:render
