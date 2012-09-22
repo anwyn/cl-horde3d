@@ -59,19 +59,31 @@
 (defcenum statistics
   "The available engine statistic parameters.
 
- :triangle-count   - Number of triangles that were pushed to the renderer
- :batch-count      - Number of batches (draw calls)
- :light-pass-count - Number of lighting passes
- :frame-time       - Time in ms between two finalizeFrame calls
- :custom-time      - Value of custom timer (useful for profiling engine functions)
- :texture-vmem     - Estimated amount of video memory used by textures (in Mb)
- :geometry-vmem    - Estimated amount of video memory used by geometry (in Mb)
+ :triangle-count      - Number of triangles that were pushed to the renderer
+ :batch-count         - Number of batches (draw calls)
+ :light-pass-count    - Number of lighting passes
+ :frame-time          - Time in ms between two finalizeFrame calls
+ :animation-time      - CPU time in ms spent for animation
+ :geo-update-time     - CPU time in ms spent for software skinning and morphing
+ :particle-sim-time   - CPU time in ms spent for particle simulation and updates
+ :fwd-lights-gpu-time - GPU time in ms spent for forward lighting passes
+ :def-lights-gpu-time - GPU time in ms spent for drawing deferred light volumes
+ :shadows-gpu-time    - GPU time in ms spent for generating shadow maps
+ :particle-gpu-time   - GPU time in ms spent for drawing particles
+ :texture-vmem        - Estimated amount of video memory used by textures (in Mb)
+ :geometry-vmem       - Estimated amount of video memory used by geometry (in Mb)
 "
   (:triangle-count 100)
   :batch-count
   :light-pass-count
   :frame-time
-  :custom-time
+  :animation-time
+  :geo-update-time
+  :particle-sim-time
+  :fwd-lights-gpu-time
+  :def-lights-gpu-time
+  :shadows-gpu-time
+  :particle-gpu-time
   :texture-vmem
   :geometry-vmem)
 
@@ -122,13 +134,17 @@
  :texture-cubemap         - Sets Texture resource to be a cubemap.
  :texture-dynamic         - Enables more efficient updates of Texture resource streams.
  :texture-renderable      - Makes Texture resource usable as render target.
+ :texture-srgb            - Indicates that Texture resource is in sRGB color space and should be converted
+		            to linear space when being sampled.
+
 "
   (:no-query #x0001)
   :no-texture-compression
   :no-texture-mipmaps
   :texture-cubemap
   :texture-dynamic
-  :texture-renderable)
+  :texture-renderable
+  :texture-srgb)
 
 (defcenum resource-format
     "The available resource stream formats.
@@ -249,11 +265,13 @@
  :shader-context-name          - Name of context [read-only]
  :shader-sampler-name          - Name of sampler [read-only]
  :shader-uniform-name          - Name of uniform [read-only]
+ :shader-uniform-size         - Size (number of components) of uniform [read-only]
  :shader-uniform-default-value - Default value of uniform (a, b, c, d)
 "
   (:shader-context-name 603) :string
   :shader-sampler-name :string
   :shader-uniform-name :string
+  :shader-uniform-size :int
   :shader-uniform-default-value :float)
 
 ;;; Texture resources
@@ -312,6 +330,7 @@
  :particle-channel-start-min     - Minimum for selecting initial random value of channel
  :particle-channel-start-max     - Maximum for selecting initial random value of channel
  :particle-channel-end-rate      - Remaining percentage of initial value when particle is dying
+ :particle-channel-drag          - Drag force channel (?)
 "
   (:particle-channel-move-velocity 801) :float
   :particle-channel-rot-velocity :float
@@ -324,7 +343,8 @@
   :particle-life-max :float
   :particle-channel-start-min :float
   :particle-channel-start-max :float
-  :particle-channel-end-rate :float)
+  :particle-channel-end-rate :float
+  :particle-channel-drag :float)
 
 ;;; Pipeline resources
 
@@ -332,8 +352,6 @@
     "The available Pipeline resource element accessors.
 
  :pipeline-stage-element    - Pipeline stage
- :pipeline-stage-name       - Name of stage [read-only]
- :pipeline-stage-activation - Flag indicating whether stage is active
 "
   (:pipeline-stage-element 900))
 
@@ -400,6 +418,21 @@
                         #+horde3d-terrain-extension terrain-node-types
                         #+horde3d-sound-extension sound-node-types))
   "The type of a Horde3D node.")
+
+
+(defbitfield node-flags
+  "The available scene node flags.
+
+  :no-draw        - Excludes scene node from all rendering
+  :no-cast-shadow - Excludes scene node from list of shadow casters
+  :no-ray-query   - Excludes scene node from ray intersection queries
+  :inactive       - Deactivates scene node so that it is completely ignored
+                    (combination of all flags above)
+"
+  (:no-draw #x0001)
+  :no-cast-shadow
+  :no-ray-query
+  :inactive)
 
 ;;; ----------------------------------------------------------------------------
 ;;; Node parameters
@@ -497,6 +530,10 @@
  :camera-top-plane            - Coordinate of top plane relative to near plane center (default: 0.041421354f)
  :camera-near-plane           - Distance of near clipping plane (default: 0.1)
  :camera-far-plane            - Distance of far clipping plane (default: 1000)
+ :camera-viewport-x           - Position x-coordinate of the lower left corner of the viewport rectangle (default: 0)
+ :camera-viewport-y           - Position y-coordinate of the lower left corner of the viewport rectangle (default: 0)
+ :camera-viewport-width       - Width of the viewport rectangle (default: 320)
+ :camera-viewport-height      - Height of the viewport rectangle (default: 240)
  :camera-ortho                - Flag for setting up an orthographic frustum instead of a perspective one (default: 0)
  :camera-occlussion-culling   - Flag for enabling occlusion culling (default: 0)
 "
@@ -509,6 +546,10 @@
   :camera-top-plane :float
   :camera-near-plane :float
   :camera-far-plane :float
+  :camera-viewport-x :int
+  :camera-viewport-y  :int
+  :camera-viewport-width  :int
+  :camera-viewport-height :int
   :camera-ortho :int
   :camera-occlussion-culling :int)
 

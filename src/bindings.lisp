@@ -33,6 +33,7 @@ Returns:
       pointer to the version string
 ")
 
+
 ;; bool h3dCheckExtension( const char* extensionName );
 (defh3fun ("h3dCheckExtension" check-extension) boolean
   "Checks if an extension is part of the engine library.
@@ -47,6 +48,7 @@ Returns:
     true if extension is implemented, otherwise false
 "
   (extension-name string))
+
 
 ;; bool h3dGetError();
 (defh3fun ("h3dGetError" get-error) boolean
@@ -64,11 +66,12 @@ can be retrieved by checking the message queue, provided that the
 message level is set accordingly.
 
 Parameters:
-	none
+        none
 
 Returns:
-	true in there was an error, otherwise false
+        true in there was an error, otherwise false
 ")
+
 
 ;; void h3dInit();
 (defh3fun ("h3dInit" init) boolean
@@ -87,6 +90,7 @@ Returns:
           true in case of success, otherwise false
 ")
 
+
 ;; void h3dRelease();
 (defh3fun ("h3dRelease" release) void
   "Releases the engine.
@@ -100,31 +104,6 @@ Returns:
  Returns:
          nothing
 ")
-
-;; void h3dSetupViewport( int x, int y, int width, int height, bool resizeBuffers);
-(defh3fun ("h3dSetupViewport" setup-viewport) void
-  "Sets the location and size of the viewport.
-
-  This function sets the location and size of the viewport. It has to be called
-  after engine initialization and whenever the size of the rendering context/window
-  changes. The resizeBuffers parameter specifies whether render targets with a size
-  relative to the viewport dimensions should be resized. This is usually desired
-  after engine initialization and when the window is resized but not for just rendering
-  to a part of the framebuffer.
-
-
-  Parameters:
-          x              - the x-position of the lower left corner of the viewport rectangle
-          y              - the y-position of the lower left corner of the viewport rectangle
-          width          - the width of the viewport
-          height         - the height of the viewport
-          resizeBuffers  - specifies whether render targets should be adapted to new size
-
-  Returns:
-          nothing
-"
-  (x int) (y int) (width int) (heigth int) (resize-buffers boolean))
-
 
 
 ;; bool h3dRender( H3DNode cameraNode );
@@ -158,6 +137,7 @@ Returns:
         nothing
 ")
 
+
 ;; void h3dClear();
 (defh3fun ("h3dClear" clear) void
   "Removes all resources and scene nodes.
@@ -173,6 +153,7 @@ Returns:
   Returns:
           nothing
 ")
+
 
 ;; const char *h3dGetMessage( int *level, float *time );
 (defh3fun ("h3dGetMessage" get-message) string
@@ -192,6 +173,7 @@ Returns:
   (level (:pointer int))
   (time (:pointer float)))
 
+
 ;; float h3dGetOption( H3DOptions::List param );
 (defh3fun ("h3dGetOption" get-option) float
   "Gets an option parameter of the engine.
@@ -205,6 +187,7 @@ Returns:
           current value of the specified option parameter
 "
   (parameter option))
+
 
 ;; bool h3dSetOption( H3DOptions::List param, float value );
 (defh3fun ("h3dSetOption" set-option) boolean
@@ -221,6 +204,7 @@ Returns:
 "
   (parameter option)
   (value float))
+
 
 ;; float h3dGetStat( EngineStats::List param, bool reset );
 (defh3fun ("h3dGetStat" get-statistics) float
@@ -239,43 +223,45 @@ Returns:
   (parameter statistics)
   (reset boolean))
 
-;; void h3dShowOverlay( float x_tl, float y_tl, float u_tl, float v_tl,
-;;                          float x_bl, float y_bl, float u_bl, float v_bl,
-;;                          float x_br, float y_br, float u_br, float v_br,
-;;                          float x_tr, float y_tr, float u_tr, float v_tr,
-;;                          float colR, float colG, float colB, float colA,
-;;                          H3DRes materialRes, int layer );
-(defh3fun ("h3dShowOverlay" show-overlay) void
-  "Shows an overlay on the screen.
 
-This function displays an overlay with a specified material at a specified position on the screen.
-An overlay is a 2D image that can be used to render 2D GUI elements. The coordinate system
-used has its origin (0, 0) at the top-left corner of the screen and its maximum (1, 1) at
-the bottom-right corner. Texture coordinates are using a system where the coordinates (0, 0)
-correspond to the lower left corner of the image.
-Overlays can have different layers which describe the order in which they are drawn. Overlays with
-smaller layer numbers are drawn before overlays with higher layer numbers.
-Note that the overlays have to be removed manually using the function clearOverlays.
+;; void h3dShowOverlays( float* verts, int vertCount,
+;;                       float colR, float colG, float colB, float colA,
+;;                       H3DRes materialRes, int flags );
+(defh3fun ("h3dShowOverlays" show-overlays) void
+  "Displays overlays on the screen.
+
+This function displays one or more overlays with a specified material
+and color.  An overlay is a screen-space quad that can be used to
+render 2D GUI elements. The overlay coordinate system has its
+origin (0, 0) at the top-left corner of the screen and its
+maximum (aspect, 1) at the bottom-right corner. As the x coordinate of
+the maximum corresponds to the aspect ratio of the viewport, the size
+of overlays can always be the same, even when different screen formats
+standard 4:3, widescreen 16:9, etc. are used. Texture coordinates are
+using a system where the coordinates (0, 0) correspond to the lower
+left corner of the image.  Overlays are drawn in the order in which
+they are pushed using this function. Overlays with the same state will
+be batched together, so it can make sense to group overlays that have
+the same material, color and flags in order to achieve best
+performance.  Note that the overlays have to be removed manually using
+the function h3dClearOverlays.
 
 Parameters:
-        x-tl, y-tl, u-tl, v-tl      - position and texture coordinates of the top-left corner
-        x-bl, y-bl, u-bl, v-bl      - position and texture coordinates of the bottom-left corner
-        x-br, y-br, u-br, v-br      - position and texture coordinates of the bottom-right corner
-        x-tr, y-tr, u-tr, v-tr      - position and texture coordinates of the top-right corner
-        col-r, col-g, col-b, col-a  - color of the overlay that is set for the material's shader
+        vertices                    - vertex data (x, y, u, v), interpreted as quads
+        vertex-count                - number of vertices (must be multiple of 4)
+        col-r, col-g, col-b, col-a  - color (and transparency) of overlays
         material-resource           - material resource used for rendering
-        layer                       - layer index of the overlay (Values: from 0 to 7)
+        flags                       - overlay flags (reserved for future use)
 
 Returns:
         nothing
 "
-  (x-tl float) (y-tl float) (u-tl float) (v-tl float)
-  (x-bl float) (y-bl float) (u-bl float) (v-bl float)
-  (x-br float) (y-br float) (u-br float) (v-br float)
-  (x-tr float) (y-tr float) (u-tr float) (v-tr float)
+  (vertices (:pointer float))
+  (vertex-count int)
   (col-r float) (col-g float) (col-b float) (col-a float)
   (material-resource resource)
-  (layer int))
+  (flags int))
+
 
 ;; void h3dClearOverlays();
 (defh3fun ("h3dClearOverlays" clear-overlays) void
@@ -289,6 +275,7 @@ Parameters:
 Returns:
         nothing
 ")
+
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; * Group: General resource management functions
@@ -390,6 +377,7 @@ Returns:
   (name string)
   (flags resource-flags))
 
+
 ;; H3DRes h3dCloneResource( H3DRes sourceRes, const char *name );
 (defh3fun ("h3dCloneResource" clone-resource) resource
   "Duplicates a resource.
@@ -430,6 +418,7 @@ Returns:
 "
   (resource resource))
 
+
 ;; bool h3dIsResLoaded( H3DRes res );
 (defh3fun ("h3dIsResLoaded" resource-loaded-p) boolean
   "Checks if a resource is loaded.
@@ -443,6 +432,7 @@ Returns:
         true if resource is loaded, otherwise or in case of failure false
 "
   (resource resource))
+
 
 ;; bool h3dLoadResource( H3DRes res, const char *data, int size );
 (defh3fun ("h3dLoadResource" load-resource) boolean
@@ -469,6 +459,7 @@ Returns:
   (data :pointer)
   (size int))
 
+
 ;; void h3dUnloadResource( H3DRes res );
 (defh3fun ("h3dUnloadResource" unload-resource) void
   "Unloads a resource.
@@ -484,6 +475,7 @@ Returns:
         nothing
 "
   (resource resource))
+
 
 ;; int h3dGetResElemCount( H3DRes res, int elem );
 (defh3fun ("h3dGetResElemCount" get-resource-element-count) int
@@ -501,6 +493,7 @@ Returns:
 "
   (resource resource)
   (element resource-element))
+
 
 ;; int h3dFindResElem( H3DRes res, int elem, int param, const char *value );
 (defh3fun ("h3dFindResElem" find-resource-element) int
@@ -526,6 +519,7 @@ Returns:
   (parameter resource-parameter)
   (value string))
 
+
 ;; int h3dGetResParamI( H3DRes res, int element, int elemIdx, int param );
 (defh3fun ("h3dGetResParamI" get-resource-parameter-i) int
   "Gets a property of a resource element.
@@ -546,6 +540,7 @@ Returns:
   (element resource-element)
   (element-index int)
   (parameter resource-parameter))
+
 
 ;; void h3dSetResParamI( H3DRes res, int element, int elemIdx, int param, int value );
 (defh3fun ("h3dSetResParamI" set-resource-parameter-i) void
@@ -570,6 +565,7 @@ Returns:
   (parameter resource-parameter)
   (value int))
 
+
 ;; float h3dGetResParamF( H3DRes res, int elem, int elemIdx, int param, int compIdx );
 (defh3fun ("h3dGetResParamF" get-resource-parameter-f) float
   "Gets a property of a resource element.
@@ -582,7 +578,7 @@ Parameters:
         element          - element type
         element-index    - index of element
         parameter        - parameter to be accessed
-	component-index  - component of the parameter to be accessed
+        component-index  - component of the parameter to be accessed
 
 Returns:
         value of the parameter
@@ -592,6 +588,7 @@ Returns:
   (element-index int)
   (parameter resource-parameter)
   (component-index int))
+
 
 ;; void h3dSetResParamF( H3DRes res, int elem, int elemIdx, int param, int compIdx, float value );
 (defh3fun ("h3dSetResParamF" set-resource-parameter-f) void
@@ -605,7 +602,7 @@ Parameters:
         element          - element type
         element-index    - index of element
         parameter        - parameter to be accessed
-	component-index  - component of the parameter to be accessed
+        component-index  - component of the parameter to be accessed
         value            - new value for the specified parameter
 
 Returns:
@@ -617,6 +614,7 @@ Returns:
   (parameter resource-parameter)
   (component-index int)
   (value float))
+
 
 ;; const char *h3dGetResParamStr( H3DRes res, int elem, int elemIdx, int param );
 (defh3fun ("h3dGetResParamStr" get-resource-parameter-str) string
@@ -667,6 +665,7 @@ Returns:
   (parameter resource-parameter)
   (value string))
 
+
 ;; void *h3dMapResStream( H3DRes res, int elem, int elemIdx, int stream, bool read, bool write );
 (defh3fun ("h3dMapResStream" map-resource-stream) :pointer
   "Maps the stream of a resource element.
@@ -685,12 +684,12 @@ Parameters:
         resource       - handle to the resource to be accessed
         element        - element type
         element-index  - index of element
-	stream         - stream to be mapped
-	read           - flag indicating whether read access is required
-	write          - flag indicating whether write access is required
+        stream         - stream to be mapped
+        read           - flag indicating whether read access is required
+        write          - flag indicating whether write access is required
 
 Returns:
-	pointer to stream data or NULL if stream cannot be mapped
+        pointer to stream data or NULL if stream cannot be mapped
 "
   (resource resource)
   (element resource-element)
@@ -699,6 +698,7 @@ Returns:
   (read boolean)
   (write boolean))
 
+
 ;; void h3dUnmapResStream( H3DRes res );
 (defh3fun ("h3dUnmapResStream" unmap-resource-stream) void
   "Unmaps a previously mapped resource stream.
@@ -706,12 +706,13 @@ Returns:
 This function unmaps a resource stream that has been mapped before.
 
 Parameters:
-	resource  - handle to the resource to be unmapped
+        resource  - handle to the resource to be unmapped
 
 Returns:
-	nothing
+        nothing
 "
   (resource resource))
+
 
 ;; H3DRes h3dQueryUnloadedResource( int index );
 (defh3fun ("h3dQueryUnloadedResource" query-unloaded-resource) resource
@@ -744,6 +745,7 @@ Parameters:
 Returns:
         nothing
 ")
+
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; * Group: Specific resource management functions
@@ -798,6 +800,7 @@ Returns:
   (vert-preamble string)
   (frag-preamble string))
 
+
 ;; bool h3dSetMaterialUniform( H3DRes materialRes, const char *name, float a, float b, float c, float d );
 (defh3fun ("h3dSetMaterialUniform" set-material-uniform) boolean
   "Sets a shader uniform of a Material resource.
@@ -821,10 +824,33 @@ Returns:
   (d float))
 
 
+;; void h3dResizePipelineBuffers( H3DRes pipeRes, int width, int height );
+(defh3fun ("h3dResizePipelineBuffers" resize-pipeline-buffers) void
+  "Changes the size of the render targets of a pipeline.
+
+This function sets the base width and height which affects render
+targets with relative (in percent) size specification. Changing the
+base size is usually desired after engine initialization and when the
+window is being resized. Note that in case several cameras use the
+same pipeline resource instance, the change will affect all cameras.
+
+Parameters:
+        pipeline-resource  - the pipeline resource instance to be changed
+        width              - base width in pixels used for render targets with relative size
+        height             - base height in pixels used for render targets with relative size
+
+Returns:
+        nothing
+"
+  (pipeline-resource resource)
+  (width int)
+  (height int))
+
+
 ;; bool h3dGetPipelineRenderTargetData( H3DRes pipelineRes, const char *targetName,
 ;;                                      int bufIndex, int *width, int *height, int *compCount,
 ;;                                      float *dataBuffer, int bufferSize );
-(defh3fun ("h3dGetPipelineRenderTargetData" get-pipeline-render-target-data) boolean
+(defh3fun ("h3dGetRenderTargetData" get-render-target-data) boolean
   "Reads the pixel data of a pipeline render target buffer.
 
 This function reads the pixels of the specified buffer of the specified render
@@ -858,9 +884,9 @@ Returns:
   (data-buffer (:pointer float))
   (buffer-size int))
 
+
 ;;;; ---------------------------------------------------------------------------
 ;;;; * Group: General Scene Graph Functions
-
 
 ;; int h3dGetNodeType( H3DNode node );
 (defh3fun ("h3dGetNodeType" get-node-type) node-type
@@ -910,7 +936,8 @@ Parameters:
 Returns:
         true in case of success, otherwise false
 "
-  (node node) (parent node))
+  (node node)
+  (parent node))
 
 
 ;; H3DNode h3dGetNodeChild( H3DNode node, int index );
@@ -927,7 +954,8 @@ Parameters:
 Returns:
         handle to the child node or 0 if child doesn't exist
 "
-  (node node) (index int))
+  (node node)
+  (index int))
 
 
 ;; H3DNode h3dAddNodes( H3DNode parent, H3DRes sceneGraphRes );
@@ -946,7 +974,8 @@ Parameters:
 Returns:
         handle to the root of the created nodes or 0 in case of failure
 "
-  (parent node) (scene-graph-resource resource))
+  (parent node)
+  (scene-graph-resource resource))
 
 
 ;; void h3dRemoveNode( H3DNode node );
@@ -963,23 +992,6 @@ Returns:
         nothing
 "
   (node node))
-
-
-;; void h3dSetNodeActivation( H3DNode node, bool active );
-(defh3fun ("h3dSetNodeActivation" set-node-activation) void
-  "Sets the activation (visibility) state of a node.
-
-This function sets the activation state of the specified node to active or
-inactive. Inactive odes with all their children are excluded from rendering.
-
-Parameters:
-        node    - handle to the node to be modified
-        active  - boolean value indicating whether node shall be active or inactive
-
-Returns:
-        nothing
-"
-  (node node) (active boolean))
 
 
 ;; bool h3dCheckNodeTransFlag( H3DNode node, bool reset );
@@ -1000,7 +1012,8 @@ Parameters:
 Returns:
         true if node has been transformed, otherwise false
 "
-  (node node) (reset boolean))
+  (node node)
+  (reset boolean))
 
 
 ;; bool h3dGetNodeTransform( H3DNode node, float *tx, float *ty, float *tz,
@@ -1072,8 +1085,9 @@ Returns:
         nothing
 "
   (node node)
-  (rel-mat :pointer)
-  (abs-mat :pointer))
+  (rel-mat (:pointer float))
+  (abs-mat (:pointer float)))
+
 
 ;; void h3dSetNodeTransMat( H3DNode node, const float *mat4x4 );
 (defh3fun ("h3dSetNodeTransMat" set-node-transform-matrix) void
@@ -1091,7 +1105,8 @@ Returns:
         nothing
 "
   (node node)
-  (mat-4x4 :pointer))
+  (mat-4x4 (:pointer float)))
+
 
 ;; int h3dGetNodeParamI( H3DNode node, int param );
 (defh3fun ("h3dGetNodeParamI" get-node-parameter-i) int
@@ -1109,6 +1124,7 @@ Returns:
 "
   (node node)
   (parameter node-parameter))
+
 
 ;; bool h3dSetNodeParamI( H3DNode node, int param, int value );
 (defh3fun ("h3dSetNodeParamI" set-node-parameter-i) void
@@ -1128,6 +1144,7 @@ Returns:
   (node node)
   (parameter node-parameter)
   (value int))
+
 
 ;; float h3dGetNodeParamF( H3DNode node, int param, int compIdx );
 (defh3fun ("h3dGetNodeParamF" get-node-parameter-f) float
@@ -1169,6 +1186,7 @@ Returns:
   (component-index int)
   (value float))
 
+
 ;; const char *h3dGetNodeParamStr( H3DNode node, int param );
 (defh3fun ("h3dGetNodeParamStr" get-node-parameter-str) string
   "Gets a property of a scene node.
@@ -1190,6 +1208,7 @@ Returns:
   (node node)
   (parameter node-parameter))
 
+
 ;; void h3dSetNodeParamstr( H3DNode node, int param, const char *value );
 (defh3fun ("h3dSetNodeParamStr" set-node-parameter-str) void
   "Sets a property of a scene node.
@@ -1208,6 +1227,41 @@ Returns:
   (node node)
   (parameter node-parameter)
   (value string))
+
+
+;; int h3dGetNodeFlags( H3DNode node );
+(defh3fun ("h3dGetNodeFlags" get-node-flags) int
+  "Gets the scene node flags.
+
+This function returns a bit mask containing the set scene node flags.
+
+Parameters:
+        node  - handle to the node to be accessed
+
+Returns:
+        flag bitmask
+"
+  (node node))
+
+
+;; void h3dSetNodeFlags( H3DNode node, int flags, bool recursive );
+(defh3fun ("h3dSetNodeFlags" set-node-flags) void
+  "Sets the scene node flags.
+
+This function sets the flags of the specified scene node.
+
+Parameters:
+        node       - handle to the node to be modified
+        flags      - new flag bitmask
+        recursive  - specifies whether flags should be applied recursively to all child nodes
+
+Returns:
+        nothing
+"
+  (node node)
+  (flags int)
+  (recursivep boolean))
+
 
 ;; void h3dGetNodeAABB( H3DNode node, float *minX, float *minY, float *minZ,
 ;;                                    float *maxX, float *maxY, float *maxZ );
@@ -1230,6 +1284,7 @@ Returns:
   (min-x (:pointer float)) (min-y (:pointer float)) (min-z (:pointer float))
   (max-x (:pointer float)) (max-y (:pointer float)) (max-z (:pointer float)))
 
+
 ;; int h3dFindNodes( H3DNode startNode, const char *name, int type );
 (defh3fun ("h3dFindNodes" find-nodes) int
   "Finds scene nodes with the specified properties.
@@ -1250,6 +1305,7 @@ Returns:
   (start-node node)
   (name string)
   (type node-type))
+
 
 ;; H3DNode h3dGetNodeFindResult( int index );
 (defh3fun ("h3dGetNodeFindResult" get-node-find-result) node
@@ -1295,6 +1351,7 @@ Returns:
   (dx float) (dy float) (dz float)
   (num-nearest int))
 
+
 ;; bool h3dGetCastRayResult( int index, H3DNode *node, float *distance, float *intersection );
 (defh3fun ("h3dGetCastRayResult" get-cast-ray-result) boolean
   "Returns a result of a previous castRay query.
@@ -1319,7 +1376,6 @@ Returns:
 
 
 ;; int h3dCheckNodeVisibility( H3DNode node, H3DNode cameraNode, bool checkOcclusion, bool calcLod );
-
 (defh3fun ("h3dCheckNodeVisibility" check-node-visibility) int
   "Checks if a node is visible.
 
@@ -1343,6 +1399,7 @@ Returns:
   (camera-node node)
   (occlusion-p boolean)
   (calc-lod boolean))
+
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; * Group: Group-specific scene graph functions
@@ -1368,7 +1425,6 @@ Returns:
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; * Group: Model-specific scene graph functions
-
 
 ;; H3DNode h3dAddModelNode( H3DNode parent, const char *name, H3DRes geometryRes );
 (defh3fun ("h3dAddModelNode" add-model-node) node
@@ -1454,6 +1510,7 @@ Returns:
   (time float)
   (weight float))
 
+
 ;; bool h3dSetModelMorpher( H3DNode modelNode, const char *target, float weight );
 (defh3fun ("h3dSetModelMorpher" set-model-morpher) boolean
   "Sets the weight of a morph target.
@@ -1475,9 +1532,9 @@ Returns:
   (target string)
   (weight float))
 
+
 ;;;; ---------------------------------------------------------------------------
 ;;;; * Group: Mesh-specific scene graph functions
-
 
 ;; H3DNode h3dAddMeshNode( H3DNode parent, const char *name, H3DRes materialRes,
 ;;                         int batchStart, int batchCount,
@@ -1508,6 +1565,7 @@ Returns:
   (vertex-r-start int)
   (vertex-r-end int))
 
+
 ;;;; ---------------------------------------------------------------------------
 ;;;; * Group: Joint-specific scene graph functions
 
@@ -1529,6 +1587,7 @@ Returns:
   (parent-node node)
   (name string)
   (joint-index int))
+
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; * Group: Light-specific scene graph functions
@@ -1563,6 +1622,7 @@ Returns:
   (lighting-context string)
   (shadow-context string))
 
+
 ;;;; ---------------------------------------------------------------------------
 ;;;; * Group: Camera-specific scene graph functions
 
@@ -1584,6 +1644,7 @@ Returns:
   (parent-node node)
   (name string)
   (pipeline-resource resource))
+
 
 ;; void h3dSetupCameraView( H3DNode cameraNode, float fov, float aspect,
 ;;                          float nearDist, float farDist );
@@ -1609,6 +1670,7 @@ Returns:
   (near-distance float)
   (far-distance float))
 
+
 ;; void h3dGetCameraProjMat( H3DNode cameraNode, float *projMat );
 (defh3fun ("h3dGetCameraProjMat" get-camera-projection-matrix) void
   "Gets the camera projection matrix.
@@ -1625,6 +1687,7 @@ Returns:
 "
   (camera-node node)
   (projection-matrix (:pointer float)))
+
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; * Group: Emitter-specific scene graph functions
@@ -1657,6 +1720,7 @@ Returns:
   (max-particle-count int)
   (respawn-count int))
 
+
 ;; void h3dAdvanceEmitterTime( H3DNode emitterNode, float timeDelta );
 (defh3fun ("h3dAdvanceEmitterTime" advance-emitter-time) void
   "Advances the time value of an Emitter node.
@@ -1676,6 +1740,7 @@ Returns:
   (emitter-node node)
   (time-delta float))
 
+
 ;; bool h3dHasEmitterFinished( H3DNode emitterNode );
 (defh3fun ("h3dHasEmitterFinished" emitter-finished-p) boolean
   "Checks if an Emitter node is still alive.
@@ -1693,6 +1758,7 @@ Returns:
          true if Emitter will no more emit any particles, otherwise or in case of failure false
 "
   (emitter-node node))
+
 
 ;;;; -----------------------------------------------------------------------
 ;;;; * Horde3D Utilities
@@ -1714,6 +1780,7 @@ Returns:
 "
   (ptr :pointer))
 
+
 ;; bool h3dutDumpMessages();
 (defh3ufun ("h3dutDumpMessages" dump-messages) boolean
   "Writes all messages in the queue to a log file.
@@ -1727,6 +1794,7 @@ Parameters:
 Returns:
         true in case of success, otherwise false
 ")
+
 
 ;;;; ---------------------------------------------------------------------------
 ;;;; * Group: OpenGL-related functions
@@ -1826,6 +1894,60 @@ Returns:
         false if at least one resource could not be loaded, otherwise true
 "
   (content-dir string))
+
+;; DLL H3DRes h3dutCreateGeometryRes( const char *name, int numVertices, int numTriangleIndices,
+;;                                    float *posData, unsigned int *indexData, short *normalData
+;;                                    short *tangentData, short *bitangentData,
+;;                                    float *texData1, float *texData2 );
+(defh3ufun ("h3dutCreateGeometryRes" create-geometry-resource) resource
+  "Creates a Geometry resource from specified vertex data.
+
+This utility function allocates and initializes a Geometry resource
+with the specified vertex attributes and indices. The optional tangent space
+data (normal, tangent, bitangent) is encoded as int16, where -1.0 maps to
+-32'767 and 1.0f to +32'767.
+
+Parameters:
+        name                 - unique name of the new Geometry resource
+        num-vertices         - number of vertices
+        num-triangle-indices - number of vertex indices
+        position-data        - vertex positions (xyz)
+        index-data           - indices defining triangles
+        normal-data          - normals xyz (optional, can be NULL)
+        tangent-data         - tangents xyz (optional, can be NULL)
+        bitangent-data       - bitangents xyz (required if tangents specified, otherwise NULL)
+        texture-data-1       - first texture coordinate uv set (optional, can be NULL)
+        texture-data-2       - second texture coordinate uv set (optional, can be NULL)
+
+Returns:
+        handle to new Geometry resource or 0 in case of failure
+"
+  (name string)
+  (num-vertices int)
+  (num-triangle-indices int)
+  (position-data (:pointer :float))
+  (index-data (:pointer :ushort))
+  (normal-data (:pointer :short))
+  (tangent-data (:pointer :short))
+  (bitangent-data (:pointer :short))
+  (texture-data-1 (:pointer :float))
+  (texture-data-2 (:pointer :float)))
+
+
+;; bool h3dutScreenshot( const char *filename );
+(defh3ufun ("h3dutScreenshot" screenshot) boolean
+  "Writes the content of the backbuffer to a tga file.
+
+This function reads back the content of the backbuffer and writes it to a tga file with the
+specified filename and path.
+
+Parameters:
+        filename  - filename and path of the output tga file
+
+Returns:
+        true if the file could be written, otherwise false
+"
+  (filename string))
 
 
 ;; bool h3dutCreateTGAImage( const unsigned char *pixels, int width, int height,
@@ -1930,8 +2052,7 @@ Parameters:
                               system see overlay documentation
         size                - size (scale) factor of the font
         col-r, col-g, col-b - font color
-        font-material-res   - font material resource used for rendering
-        layer               - layer index of the font overlays
+        font-material-resource   - font material resource used for rendering
 
 Returns:
         nothing
@@ -1943,8 +2064,7 @@ Returns:
   (col-r float)
   (col-g float)
   (col-b float)
-  (font-material-resource resource)
-  (layer int))
+  (font-material-resource resource))
 
 ;; void h3dutShowFrameStats( H3DRes fontMaterialRes, H3DRes panelMaterialRes, int mode );
 (defh3ufun ("h3dutShowFrameStats" show-frame-statistics) void

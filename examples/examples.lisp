@@ -73,13 +73,18 @@
   (:documentation "Set window of app to new width and height.")
 
   (:method :after ((app example-application) width height)
-           (setf (width app) width
-                 (height app) height))
+    (setf (width app) width
+          (height app) height))
   (:method ((app example-application) width height)
-    (h3d:setup-viewport 0 0 width height t)
-    (h3d:setup-camera-view (camera-node app) 45.0
-                           (/ width height)
-                           0.1 1000.0)))
+    (let ((cam (camera-node app)))
+      (setf (h3d:node-parameter cam :camera-viewport-x) 0
+            (h3d:node-parameter cam :camera-viewport-y) 0
+            (h3d:node-parameter cam :camera-viewport-width) width
+            (h3d:node-parameter cam :camera-viewport-height) height)
+
+      (h3d:setup-camera-view cam 45.0 (/ width height) 0.1 1000.0)
+      (h3d:resize-pipeline-buffers (hdr-pipeline app) width height)
+      (h3d:resize-pipeline-buffers (fwd-pipeline app) width height))))
 
 
 (defgeneric app-key-press-event (app key)
@@ -265,12 +270,12 @@ instance of a class derived from example-application."
                (with-simple-restart
                    (skip-game-loop "Skip game loop for this frame")
                  (app-main-loop app))
-               #+horde3d-debug
-               (with-simple-restart
-                   (skip-swank-request "Skip swank evaluation")
-                 (let ((connection
-                        (or swank::*emacs-connection* (swank::default-connection))))
-                   (swank::handle-requests connection t)))
+               ;; #+horde3d-debug
+               ;; (with-simple-restart
+               ;;     (skip-swank-request "Skip swank evaluation")
+               ;;   (let ((connection
+               ;;          (or swank::*emacs-connection* (swank::default-connection))))
+               ;;     (swank::handle-requests connection t)))
                (sdl:update-display))))))
 
 ;;; examples.lisp ends here

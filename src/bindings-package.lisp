@@ -66,7 +66,7 @@
    #:get-statistics
 
    ;; Overlays
-   #:show-overlay
+   #:show-overlays
    #:clear-overlays
 
    ;; Resource management
@@ -99,7 +99,8 @@
    #:create-texture
    #:set-shader-preambles
    #:set-material-uniform
-   #:get-pipeline-render-target-data
+   #:resize-pipeline-buffers
+   #:get-render-target-data
 
    ;;  General scene graph functions
    #:get-node-type
@@ -165,7 +166,9 @@
    #:get-resource-path
    #:set-resource-path
    #:load-resources-from-disk
+   #:screenshot
    #:create-tga-image
+   #:create-geometry-resource
    #:pick-ray
    #:pick-node
    #:show-text

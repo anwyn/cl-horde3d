@@ -23,7 +23,6 @@
    #:get-error
    #:init
    #:release
-   #:setup-viewport
    #:render
    #:finalize-frame
    #:clear
@@ -57,7 +56,8 @@
    #:set-material-uniform
    #:set-material-sampler
    #:set-pipeline-stage-activation
-   #:get-pipeline-render-target-data
+   #:resize-pipeline-buffers
+   #:get-render-target-data
 
    ;;  General scene graph functions
    #:get-node-type

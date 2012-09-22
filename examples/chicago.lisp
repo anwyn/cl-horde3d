@@ -123,12 +123,12 @@
                                       (fwd-pipeline app))
                                  "forward"
                                  "deferred"))
-                     0.03 0.24 0.026 1 1 1 font 5))
+                     0.03 0.24 0.026 1 1 1 font))
 
     ;; Show logo
-    (h3d:show-overlay 0.75 0.8 0 1 0.75 1 0 0
-                      1 1 1 0 1 0.8 1 1
-                      1 1 1 1 (logo-resource app) 7)
+    ;; (h3d:show-overlay 0.75 0.8 0 1 0.75 1 0 0
+    ;;                   1 1 1 0 1 0.8 1 1
+    ;;                   1 1 1 1 (logo-resource app) 7)
 
     ;; Render scene
     (h3d:render cam)))

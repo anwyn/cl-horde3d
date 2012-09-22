@@ -68,8 +68,7 @@
   (close-foreign-library '%h3d:horde3d-utils)
   (close-foreign-library '%h3d:horde3d))
 
-(import-export %h3d:setup-viewport
-               %h3d:render
+(import-export %h3d:render
                %h3d:finalize-frame
                %h3d:clear)
 
@@ -113,7 +112,7 @@
      do (set-option key (car rest))))
 
 (import-export %h3d:get-statistics
-               %h3d:show-overlay
+               %h3d:show-overlays
                %h3d:clear-overlays)
 
 ;;;; General resource management functions
@@ -207,18 +206,19 @@
 
 (import-export %h3d:create-texture
                %h3d:set-shader-preambles
-               %h3d:set-material-uniform)
+               %h3d:set-material-uniform
+               %h3d:resize-pipeline-buffers)
 
-(defun get-pipeline-render-target-data
+(defun get-render-target-data
     (pipeline-res target-name buf-index &optional data-buffer buffer-size)
   (with-foreign-objects ((w :int)
                          (h :int)
                          (count :int))
     (if (and (pointerp data-buffer) (not (null buffer-size)))
-        (%h3d:get-pipeline-render-target-data pipeline-res target-name
-                                              buf-index w h count data-buffer buffer-size)
-        (%h3d:get-pipeline-render-target-data pipeline-res target-name
-                                              buf-index w h count (null-pointer) 0))
+        (%h3d:get-render-target-data pipeline-res target-name
+                                     buf-index w h count data-buffer buffer-size)
+        (%h3d:get-render-target-data pipeline-res target-name
+                                     buf-index w h count (null-pointer) 0))
     (values (mem-ref w :int) (mem-ref h :int) (mem-ref count :int))))
 
 ;;;; General scene graph functions

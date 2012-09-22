@@ -21,8 +21,7 @@
   (:windows "Horde3DUtils.dll" :calling-convention :stdcall)
   (:unix (:or "libHorde3DUtils.so" "libHorde3DUtils.so.1")))
 
-(eval-when (:compile-toplevel)
-  (use-foreign-library %h3d:horde3d-utils)
-  (use-foreign-library %h3d:horde3d))
+(use-foreign-library horde3d-utils)
+(use-foreign-library horde3d)
 
 ;;; libraries.lisp ends here
