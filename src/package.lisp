@@ -34,7 +34,7 @@
    #:get-stat
 
    ;; Overlays
-   #:show-overlay
+   #:show-overlays
    #:clear-overlays
 
    ;; Resource management

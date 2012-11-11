@@ -502,6 +502,7 @@
  :light-radius              - Radius of influence (default: 100.0)
  :light-fov                 - Field of view (FOV) angle (default: 90.0)
  :light-color               - Diffuse color RGB (default: 1.0, 1.0, 1.0)
+ :light-color-multiplier    - Diffuse color multiplier for altering intensity, mainly useful for HDR (default: 1.0)
  :light-shadow-map-count    - Number of shadow maps used for light source (values: 0, 1, 2, 3, 4; default: 0)]
  :light-shadow-split-lambda - Constant determining segmentation of view frustum for Parallel Split Shadow Maps (default: 0.5)
  :light-shadow-map-bias     - Bias value for shadow mapping to reduce shadow acne (default: 0.005)
@@ -512,6 +513,7 @@
   :light-radius :float
   :light-fov :float
   :light-color :float
+  :light-color-multiplier :float
   :light-shadow-map-count :int
   :light-shadow-split-lambda :float
   :light-shadow-map-bias :float

@@ -112,8 +112,11 @@
      do (set-option key (car rest))))
 
 (import-export %h3d:get-statistics
-               %h3d:show-overlays
                %h3d:clear-overlays)
+
+(defun show-overlays (vertices count col-r col-g col-b col-a material flags)
+  (with-pointer-to-vector-data (verts vertices)
+    (%h3d:show-overlays verts count col-r col-g col-b col-a material flags)))
 
 ;;;; General resource management functions
 
