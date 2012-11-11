@@ -54,8 +54,8 @@
           (knight (h3d:add-nodes h3d:+root-node+ knight-res)))
       (setf (knight-node app) knight)
 
-      (h3d:set-node-transform env 0.0 -20.0 0.0 0.0 0.0 0.0 20.0 20.0 20.0)
-      (h3d:set-node-transform knight 0.0 0.0 0.0 0.0 180.0 0.0 0.1 0.1 0.1)
+      (h3d:set-node-transform env 0 -20 0 0 0 0 20 20 20)
+      (h3d:set-node-transform knight 0 0 0 0 180 0 0.1 0.1 0.1)
 
       (h3d:setup-model-animation-stage knight 0 knight-anim-res-1 0 "" nil)
       (h3d:setup-model-animation-stage knight 1 knight-anim-res-2 0 "" nil)
@@ -64,18 +64,19 @@
       (h3d:find-nodes knight "Bip01_R_Hand" :joint)
       (let ((particle-sys-node (h3d:add-nodes (h3d:get-node-find-result 0) particle-sys-res)))
         (setf (particle-sys-node app) particle-sys-node)
-        (h3d:set-node-transform particle-sys-node 0.0 40.0 0.0 90.0 0.0 0.0 1.0 1.0 1.0))))
+        (h3d:set-node-transform particle-sys-node 0 40 0 90 0 0 1 1 1))))
 
   ;; Add light source
   (let ((light (h3d:add-light-node h3d:+root-node+ "Light1" 0 "LIGHTING" "SHADOWMAP")))
-    (h3d:set-node-transform light 0.0 15.0 10.0 -60.0 0.0 0.0 1.0 1.0 1.0)
+    (h3d:set-node-transform light 0 15 10 -60 0 0 1 1 1)
     (setf (h3d:node-parameter light :light-radius) 30
           (h3d:node-parameter light :light-fov) 90
           (h3d:node-parameter light :light-shadow-map-count) 1
           (h3d:node-parameter light :light-shadow-map-bias) 0.01
           (h3d:node-parameter light :light-color :component 0) 1.0
           (h3d:node-parameter light :light-color :component 1) 0.8
-          (h3d:node-parameter light :light-color :component 2) 0.7))
+          (h3d:node-parameter light :light-color :component 2) 0.7
+          (h3d:node-parameter light :light-color-multiplier :component 0) 1.0))
 
   ;; Customize post processing effects
   (let ((mat-res (h3d:find-resource :material "pipelines/postHDR.material.xml")))
@@ -130,9 +131,14 @@
                      0.03 0.24 0.026 1 1 1 font))
 
     ;; Show logo
-    ;; (h3d:show-overlay 0.75 0.8 0 1 0.75 1 0 0
-    ;;                   1 1 1 0 1 0.8 1 1
-    ;;                   1 1 1 1 (logo-resource app) 7)
+    (let* ((ww (float (/ (h3d:node-parameter cam :camera-viewport-width)
+                        (h3d:node-parameter cam :camera-viewport-height))))
+           (logo (make-array 16 :element-type 'single-float
+                                :initial-contents (list (- ww 0.4) 0.8 0.0 1.0
+                                                        (- ww 0.4) 1.0 0.0 0.0
+                                                        ww 1.0 1.0 0.0
+                                                        ww 0.8 1.0 1.0))))
+      (h3d:show-overlays logo 4 1.0 1.0 1.0 1.0 (logo-resource app) 0))
 
     ;; Render scene
     (h3d:render cam)))
