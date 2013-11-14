@@ -1,5 +1,13 @@
 ;;; -*- lisp -*-
 
+;;; If Horde3d has been compiled with the sound or terrain extensions
+;;; you can enable the respective bindings by pushing
+;;; :horde3d-terrain-extension or :horde3d-terrain-extension to *features*
+;;; before loading the system.
+;;;
+;; (push :horde3d-terrain-extension cl:*features*)
+;; (push :horde3d-sound-extension cl:*features*)
+
 (defsystem :horde3d
   :description "CFFI bindings for the Horde3D rendering engine."
   :long-description "CFFI bindings for the Horde3D rendering engine."
@@ -15,21 +23,27 @@
   ((:doc-file "README.org")
    (:static-file "horde3d.asd")
    (:module "src"
-            :components
-            ((:file "bindings-package")
-             (:file "libraries" :depends-on ("bindings-package"))
-             (:file "types" :depends-on ("libraries"))
-             ;; (:file "terrain-bindings" :depends-on ("types"))
-             ;; (:file "sound-bindings" :depends-on ("types"))
-             ;; (:file "enums" :depends-on ("types" "terrain-bindings" "sound-bindings"))
-             (:file "enums" :depends-on ("types"))
-             (:file "bindings" :depends-on ("enums"))
-             ;; lispification
-             (:file "package" :depends-on ("bindings-package"))
-             (:file "horde3d" :depends-on ("package" "bindings"))
-             ;; (:file "terrain" :depends-on ("horde3d"))
-             ;; (:file "sound"   :depends-on ("horde3d"))
-             ))))
+    :components
+    ((:file "bindings-package")
+     (:file "libraries" :depends-on ("bindings-package"))
+     (:file "types" :depends-on ("libraries"))
+     #+horde3d-terrain-extension
+     (:file "terrain-bindings" :depends-on ("types"))
+     #+horde3d-sound-extension
+     (:file "sound-bindings" :depends-on ("types"))
+     (:file "enums" :depends-on ("types"
+                                 #+horde3d-terrain-extension
+                                 "terrain-bindings"
+                                 #+horde3d-sound-extension
+                                 "sound-bindings"))
+     (:file "bindings" :depends-on ("enums"))
+     ;; lispification
+     (:file "package" :depends-on ("bindings-package"))
+     (:file "horde3d" :depends-on ("package" "bindings"))
+     #+horde3d-terrain-extension
+     (:file "terrain" :depends-on ("horde3d"))
+     #+horde3d-sound-extension
+     (:file "sound"   :depends-on ("horde3d"))))))
 
 (defsystem :horde3d-test
   :components ((:module "test"

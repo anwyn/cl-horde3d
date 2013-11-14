@@ -13,10 +13,7 @@
   (:nicknames #:%h3d-terrain)
   (:use #:cffi #:%h3d)
   (:import-from #:common-lisp
-                #:in-package
-                #:eval-when
-                #:push
-                #:*features*)
+                #:in-package)
   (:export
    #:add-terrain-node
    #:create-geometry-resource))
@@ -82,8 +79,5 @@ Returns:
          handle to the created Geometry resource or 0 in case of failure
 "
   (node node) (res-name string) (mesh-quality float))
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (push :horde3d-terrain-extension *features*))
 
 ;;; terrain-bindings.lisp ends here

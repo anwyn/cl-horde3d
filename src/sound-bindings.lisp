@@ -13,10 +13,7 @@
   (:nicknames #:%h3d-sound)
   (:use #:cffi #:%h3d)
   (:import-from #:common-lisp
-                #:in-package
-                #:eval-when
-                #:push
-                #:*features*)
+                #:in-package)
   (:export
    #:open-device
    #:close-device
@@ -356,7 +353,5 @@ Returns:
 "
   (sound-node node))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (push :horde3d-sound-extension *features*))
 
 ;;; sound-bindings.lisp ends here
