@@ -121,6 +121,8 @@
    #:set-node-parameter-f
    #:get-node-parameter-str
    #:set-node-parameter-str
+   #:get-node-flags
+   #:set-node-flags
    #:get-node-aabb
    #:find-nodes
    #:get-node-find-result

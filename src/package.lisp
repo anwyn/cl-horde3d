@@ -73,6 +73,8 @@
    #:get-node-transform-matrices
    #:set-node-transform-matrix
    #:node-parameter
+   #:get-node-flags
+   #:set-node-flags
    #:get-node-aabb
    #:find-nodes
    #:get-node-find-result

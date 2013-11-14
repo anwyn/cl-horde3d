@@ -1230,7 +1230,7 @@ Returns:
 
 
 ;; int h3dGetNodeFlags( H3DNode node );
-(defh3fun ("h3dGetNodeFlags" get-node-flags) int
+(defh3fun ("h3dGetNodeFlags" get-node-flags) node-flags
   "Gets the scene node flags.
 
 This function returns a bit mask containing the set scene node flags.
@@ -1259,7 +1259,7 @@ Returns:
         nothing
 "
   (node node)
-  (flags int)
+  (flags node-flags)
   (recursivep boolean))
 
 

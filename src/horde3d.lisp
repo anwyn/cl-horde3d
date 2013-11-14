@@ -299,6 +299,9 @@
 (defsetf node-parameter (node param &key (component 0)) (store)
   `(set-node-parameter ,node ,param ,store :component ,component))
 
+(import-export %h3d:get-node-flags
+               %h3d:set-node-flags)
+
 (defun get-node-aabb (node)
   (with-foreign-objects ((minx :float) (miny :float) (minz :float)
                          (maxx :float) (maxy :float) (maxz :float))
